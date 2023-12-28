@@ -70,7 +70,6 @@
 #define CONFIG_FATEFUL_ENCOUNTER_MARK                   TRUE
 #define CONFIG_ITEM_NAME_TEXT_ALIGN                     TEXT_ALIGN_CENTER
 #define CONFIG_MERRP_ICON_SYSTEM                        FALSE // https://github.com/aarant/pokeemerald/tree/icons
-#define CONFIG_TEACHABLE_LEARNSETS                      FALSE
 
 // Make sure gBallIconTable in src/data/item_icon_table.h is ordered correctly.  Default does not match RHH
 
@@ -144,7 +143,13 @@ static EWRAM_DATA struct PokemonSummaryScreenData
     {
         u16 species;
         u16 species2;
+        #ifdef BATTLE_ENGINE
+        u8 isEgg:1;
+        u8 isShiny:1;
+        u8 padding:6;
+        #else
         u8 isEgg;
+        #endif
         u8 level;
         u8 ribbonCount;
         u8 ailment;
@@ -190,6 +195,9 @@ static EWRAM_DATA struct PokemonSummaryScreenData
         u8 spatkEV;
         u8 spdefEV;
         u8 speedEV;
+        #ifdef BATTLE_ENGINE
+        u8 teraType;
+        #endif
     } summary;
     u16 bgTilemapBufferPage[0x400];
     u16 bgTilemapBufferBG[0x400];
@@ -1596,6 +1604,10 @@ static bool8 ExtractMonDataToSummaryStruct(struct Pokemon *mon)
         break;
     default:
         sum->ribbonCount = GetMonData(mon, MON_DATA_RIBBON_COUNT);
+        #ifdef BATTLE_ENGINE
+        sum->teraType = GetMonData(mon, MON_DATA_TERA_TYPE);
+        sum->isShiny = GetMonData(mon, MON_DATA_IS_SHINY);
+        #endif
         sum->fatefulEncounter = GetMonData(mon, MON_DATA_MODERN_FATEFUL_ENCOUNTER);
         if (sum->isEgg)
         {
@@ -2574,15 +2586,15 @@ static bool8 CanReplaceMove(void)
 {
     if (CONFIG_CAN_FORGET_HM_MOVES)
         return TRUE;
-    #ifdef CONFIG_TEACHABLE_LEARNSETS
-        else if (sMonSummaryScreen->firstMoveIndex == MAX_MON_MOVES || sMonSummaryScreen->newMove == MOVE_NONE)
-            return TRUE;
+    #ifdef BATTLE_ENGINE
+    else if (sMonSummaryScreen->firstMoveIndex == MAX_MON_MOVES || sMonSummaryScreen->newMove == MOVE_NONE)
+        return TRUE;
     #else
-        else if (sMonSummaryScreen->firstMoveIndex == MAX_MON_MOVES
-            || sMonSummaryScreen->newMove == MOVE_NONE
-            || IsMoveHm(sMonSummaryScreen->summary.moves[sMonSummaryScreen->firstMoveIndex]) != TRUE)
-                return TRUE;
-        #endif
+    else if (sMonSummaryScreen->firstMoveIndex == MAX_MON_MOVES
+        || sMonSummaryScreen->newMove == MOVE_NONE
+        || IsMoveHm(sMonSummaryScreen->summary.moves[sMonSummaryScreen->firstMoveIndex]) != TRUE)
+            return TRUE;
+    #endif
     else
         return FALSE;
 }
@@ -3940,7 +3952,7 @@ static u8 LoadMonGfxAndSprite(struct Pokemon *mon, s16 *state)
         return 0xFF;
     case 1:
         #ifdef BATTLE_ENGINE
-            LoadCompressedSpritePaletteWithTag(GetMonSpritePalFromSpeciesAndPersonality(summary->species2, summary->OTID, summary->pid), summary->species2);
+            LoadCompressedSpritePaletteWithTag(GetMonSpritePalFromSpeciesAndPersonality(summary->species2, summary->isShiny, summary->pid), summary->species2);
             SetMultiuseSpriteTemplateToPokemon(summary->species2, 1);
         #else
             pal = GetMonSpritePalStructFromOtIdPersonality(summary->species2, summary->OTID, summary->pid);
