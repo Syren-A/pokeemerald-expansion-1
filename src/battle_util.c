@@ -1744,8 +1744,8 @@ u8 DoFieldEndTurnEffects(void)
                 for (j = i + 1; j < gBattlersCount; j++)
                 {
                     if (!gProtectStructs[i].quash
-                            && !gProtectStructs[j].quash
-                            && GetWhichBattlerFaster(gBattlerByTurnOrder[i], gBattlerByTurnOrder[j], FALSE) == -1)
+                     && !gProtectStructs[j].quash
+                     && GetWhichBattlerFaster(gBattlerByTurnOrder[i], gBattlerByTurnOrder[j], FALSE) == -1)
                         SwapTurnOrder(i, j);
                 }
             }
