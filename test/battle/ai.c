@@ -830,3 +830,24 @@ AI_SINGLE_BATTLE_TEST("AI will choose Surf over Thunderbolt and Ice Beam if the 
         TURN { EXPECT_MOVE(opponent, MOVE_SURF); }
     }
 }
+
+AI_DOUBLE_BATTLE_TEST("AI will choose moves with respect to partner in double battles")
+{
+    u32 species;
+
+    PARAMETRIZE { species = SPECIES_SANDSHREW_ALOLAN; }
+    PARAMETRIZE { species = SPECIES_SANDSHREW; }
+    // AI_LOG;
+    GIVEN {
+        AI_FLAGS(AI_FLAG_CHECK_BAD_MOVE | AI_FLAG_CHECK_VIABILITY | AI_FLAG_TRY_TO_FAINT);
+        PLAYER(SPECIES_WOBBUFFET);
+        PLAYER(SPECIES_WOBBUFFET);
+        OPPONENT(species) { Moves(MOVE_CELEBRATE); }
+        OPPONENT(SPECIES_WOBBUFFET) { Moves(MOVE_TACKLE, MOVE_SNOWSCAPE); }
+    } WHEN {
+        if (species == SPECIES_SANDSHREW_ALOLAN)
+            TURN { EXPECT_MOVE(opponentRight, MOVE_SNOWSCAPE); }
+        else
+            TURN { EXPECT_MOVE(opponentRight, MOVE_TACKLE); }
+    }
+}
