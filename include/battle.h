@@ -1166,7 +1166,6 @@ static inline u32 GetBattlerSide(u32 battler)
 static inline struct Pokemon* GetBattlerData(u32 battlerId)
 {
     u32 index = gBattlerPartyIndexes[battlerId];
-
     return (GetBattlerSide(battlerId) == B_SIDE_OPPONENT) ? &gEnemyParty[index] : &gPlayerParty[index];
 }
 
@@ -1183,6 +1182,12 @@ static inline struct Pokemon *GetBattlerParty(u32 battler)
 static inline bool32 IsDoubleBattle(void)
 {
     return gBattleTypeFlags & BATTLE_TYPE_DOUBLE;
+}
+
+static inline bool32 IsSpreadMove(u32 battler, u32 move)
+{
+    u32 moveTarget = GetBattlerMoveTargetType(battler, move);
+    return IsDoubleBattle() && (moveTarget == MOVE_TARGET_BOTH || moveTarget == MOVE_TARGET_FOES_AND_ALLY);
 }
 
 #endif // GUARD_BATTLE_H

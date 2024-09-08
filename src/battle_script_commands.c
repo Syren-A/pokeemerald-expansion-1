@@ -1101,12 +1101,6 @@ static const u8 sTerrainToType[BATTLE_TERRAIN_COUNT] =
     [BATTLE_TERRAIN_PLAIN]            = (B_CAMOUFLAGE_TYPES >= GEN_4 ? TYPE_GROUND : TYPE_NORMAL),
 };
 
-bool32 IsSpreadMove(u32 battler, u32 move)
-{
-    u32 moveTarget = GetBattlerMoveTargetType(battler, move);
-    return (moveTarget == MOVE_TARGET_BOTH || moveTarget == MOVE_TARGET_FOES_AND_ALLY);
-}
-
 static bool32 NoTargetPresent(u8 battler, u32 move)
 {
     if (!IsBattlerAlive(gBattlerTarget))
@@ -1785,7 +1779,7 @@ static void AccuracyCheck(bool32 recalcDragonDarts, const u8 *nextInstr, const u
     else
     {
         u32 moveType = GetMoveType(move);
-		bool32 calcSpreadMove = IsDoubleBattle() && IsSpreadMove(gBattlerAttacker, gCurrentMove) && !IS_MOVE_STATUS(move);
+		bool32 calcSpreadMove = IsSpreadMove(gBattlerAttacker, move);
 
         u32 battlerDef;
         for (battlerDef = 0; battlerDef < gBattlersCount; battlerDef++)
@@ -2018,7 +2012,7 @@ static void Cmd_critcalc(void)
     u16 partySlot;
     u32 battlerDef;
     u32 moveTarget = GetBattlerMoveTargetType(gBattlerAttacker, gCurrentMove);
-    bool32 calcSpreadMoveDamage = IsDoubleBattle() && IsSpreadMove(gBattlerAttacker, gCurrentMove);
+    bool32 calcSpreadMoveDamage = IsSpreadMove(gBattlerAttacker, gCurrentMove) && !IS_MOVE_STATUS(gCurrentMove);
     gPotentialItemEffectBattler = gBattlerAttacker;
 
     for (battlerDef = 0; battlerDef < gBattlersCount; battlerDef++)
@@ -2074,7 +2068,7 @@ static void Cmd_damagecalc(void)
     u32 moveType = GetMoveType(gCurrentMove);
     u32 moveTarget = GetBattlerMoveTargetType(gBattlerAttacker, gCurrentMove);
 
-    if (IsDoubleBattle() && IsSpreadMove(gBattlerAttacker, gCurrentMove))
+    if (IsSpreadMove(gBattlerAttacker, gCurrentMove))
     {
         u32 battlerDef;
         for (battlerDef = 0; battlerDef < gBattlersCount; battlerDef++)
@@ -2123,7 +2117,7 @@ static void Cmd_adjustdamage(void)
     u32 rand = Random() % 100;
     u32 affectionScore = GetBattlerAffectionHearts(gBattlerTarget);
     u32 moveType = GetMoveType(gCurrentMove);
-    bool32 calcSpreadMoveDamage = IsDoubleBattle() && IsSpreadMove(gBattlerAttacker, gCurrentMove);
+    bool32 calcSpreadMoveDamage = IsSpreadMove(gBattlerAttacker, gCurrentMove) && !IS_MOVE_STATUS(gCurrentMove);
 
     for (battlerDef = 0; battlerDef < gBattlersCount; battlerDef++)
     {
@@ -2829,6 +2823,7 @@ static void Cmd_resultmessage(void)
         BattleScriptPushCursor();
         gBattlescriptCurrInstr = BattleScript_PrintBerryReduceString;
     }
+    gBattleStruct->resultFlags[gBattlerTarget] = gMoveResultFlags;
 }
 
 static void Cmd_printstring(void)
