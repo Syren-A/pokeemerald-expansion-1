@@ -138,6 +138,7 @@ void HandleAction_UseMove(void)
 
     gIsCriticalHit = FALSE;
     gBattleStruct->atkCancellerTracker = 0;
+    ClearDamageCalcResults();
     gMoveResultFlags = 0;
     gMultiHitCounter = 0;
     gBattleScripting.savedDmg = 0;
@@ -731,7 +732,7 @@ void HandleAction_ActionFinished(void)
     {
         ExpendTypeStellarBoost(gBattlerAttacker, moveType);
     }
-
+    ClearDamageCalcResults();
     gCurrentMove = 0;
     gBattleMoveDamage = 0;
     gMoveResultFlags = 0;
@@ -3415,7 +3416,7 @@ u8 AtkCanceller_UnableToUseMove(u32 moveType)
                         gBattleCommunication[MULTISTRING_CHOOSER] = TRUE;
                         gBattlerTarget = gBattlerAttacker;
                         gBattleStruct->calculatedDamage[gBattlerAttacker] = CalculateMoveDamage(MOVE_NONE, gBattlerAttacker, gBattlerAttacker, TYPE_MYSTERY, 40, FALSE, FALSE, TRUE);
-                        gMoveResultFlags |= gBattleStruct->resultFlags[gBattlerTarget];
+                        gMoveResultFlags |= gBattleStruct->moveResultFlags[gBattlerTarget];
                         gProtectStructs[gBattlerAttacker].confusionSelfDmg = TRUE;
                         gHitMarker |= HITMARKER_UNABLE_TO_USE_MOVE;
                     }
@@ -3682,10 +3683,8 @@ u8 AtkCanceller_UnableToUseMove(u32 moveType)
                 break;
             }
 
-            // const u8* backupScript = gBattlescriptCurrInstr; //Script can get overwritten by ability blocking
             u32 moveTarget = GetBattlerMoveTargetType(gBattlerAttacker, gCurrentMove);
-
-            if (IS_SPREAD_MOVE(moveTarget))
+            if (IsSpreadMove(moveTarget))
             {
                 u32 battlerDef;
                 for (battlerDef = 0; battlerDef < gBattlersCount; battlerDef++)
@@ -3696,21 +3695,20 @@ u8 AtkCanceller_UnableToUseMove(u32 moveType)
                      || IsBattlerProtected(gBattlerAttacker, battlerDef, gCurrentMove)
                      || gBattleMoveEffects[gMovesInfo[gCurrentMove].effect].twoTurnEffect)
                     {
-                        gBattleStruct->resultFlags[battlerDef] = MOVE_RESULT_NO_EFFECT;
+                        gBattleStruct->moveResultFlags[battlerDef] = MOVE_RESULT_NO_EFFECT;
                         gBattleStruct->noResultString[battlerDef] = TRUE;
                         continue;
                     }
 
-                    // ||  AbilityBattleEffects(ABILITYEFFECT_MOVES_BLOCK_PARTNER, PARTNER(i), 0, 0, 0)
-                    if (AbilityBattleEffects(ABILITYEFFECT_MOVES_BLOCK, battlerDef, 0, 0, 0)
+                    if (AbilityBattleEffects(ABILITYEFFECT_WOULD_BLOCK, battlerDef, 0, 0, 0)
                      || (IsBattlerTerrainAffected(gBattlerAttacker, STATUS_FIELD_PSYCHIC_TERRAIN) && GetMovePriority(gBattlerAttacker, gCurrentMove) > 0))
                     {
-                        gBattleStruct->resultFlags[battlerDef] = 0;
+                        gBattleStruct->moveResultFlags[battlerDef] = 0;
                         gBattleStruct->noResultString[battlerDef] = TRUE;
                     }
-                    else if (AbilityBattleEffects(ABILITYEFFECT_ABSORBING, battlerDef, 0, 0, gCurrentMove))
+                    else if (AbilityBattleEffects(ABILITYEFFECT_WOULD_ABSORB, battlerDef, 0, 0, gCurrentMove))
                     {
-                        gBattleStruct->resultFlags[battlerDef] = 0;
+                        gBattleStruct->moveResultFlags[battlerDef] = 0;
                         gBattleStruct->noResultString[battlerDef] = DO_ACCURACY_CHECK;
                     }
                     else
@@ -3724,7 +3722,6 @@ u8 AtkCanceller_UnableToUseMove(u32 moveType)
                     gBattleStruct->numSpreadTargets = CountAliveMonsInBattle(BATTLE_ALIVE_EXCEPT_BATTLER, gBattlerAttacker);
 
             }
-            // gBattlescriptCurrInstr = backupScript; //Restore original script
             gBattleStruct->atkCancellerTracker++;
             break;
         case CANCELLER_END:
@@ -8569,52 +8566,40 @@ bool32 IsBattlerProtected(u32 battlerAtk, u32 battlerDef, u32 move)
 
     // Z-Moves and Max Moves bypass protection (except Max Guard).
     if ((IsZMove(move) || IsMaxMove(move))
-         && (!gProtectStructs[battlerDef].maxGuarded
-             || gMovesInfo[move].argument == MAX_EFFECT_BYPASS_PROTECT))
+         && (!gProtectStructs[battlerDef].maxGuarded || gMovesInfo[move].argument == MAX_EFFECT_BYPASS_PROTECT))
         return FALSE;
 
     // Max Guard is silly about the moves it blocks, including Teatime.
     if (gProtectStructs[battlerDef].maxGuarded && IsMoveBlockedByMaxGuard(move))
+    {
+        gBattleStruct->missStringId[battlerDef] = gBattleCommunication[MISS_TYPE] = B_MSG_PROTECTED;
         return TRUE;
+    }
 
-    // Protective Pads doesn't stop Unseen Fist from bypassing Protect effects, so IsMoveMakingContact() isn't used here.
-    // This means extra logic is needed to handle Shell Side Arm.
-    if (GetBattlerAbility(gBattlerAttacker) == ABILITY_UNSEEN_FIST
-        && (gMovesInfo[move].makesContact
-            || (gMovesInfo[move].effect == EFFECT_SHELL_SIDE_ARM
-                && gBattleStruct->shellSideArmCategory[battlerAtk][battlerDef] == DAMAGE_CATEGORY_PHYSICAL))
-        && !gProtectStructs[battlerDef].maxGuarded) // Max Guard cannot be bypassed by Unseen Fist
+    if (!gProtectStructs[battlerDef].maxGuarded // Max Guard cannot be bypassed by Unseen Fist
+     && IsMoveMakingContact(move, gBattlerAttacker)
+     && GetBattlerAbility(gBattlerAttacker) == ABILITY_UNSEEN_FIST)
         return FALSE;
-    else if (gSideStatuses[GetBattlerSide(battlerDef)] & SIDE_STATUS_CRAFTY_SHIELD
-             && IS_MOVE_STATUS(move))
-        return TRUE;
-    else if (gMovesInfo[move].ignoresProtect)
+    if (gMovesInfo[move].ignoresProtect)
         return FALSE;
-    else if (gProtectStructs[battlerDef].protected)
+
+    if ((gProtectStructs[battlerDef].protected)
+     || (gProtectStructs[battlerDef].banefulBunkered)
+     || (gProtectStructs[battlerDef].burningBulwarked)
+     || ((gProtectStructs[battlerDef].obstructed || gProtectStructs[battlerDef].silkTrapped) && !IS_MOVE_STATUS(move))
+     || (gProtectStructs[battlerDef].spikyShielded)
+     || (gProtectStructs[battlerDef].kingsShielded && gMovesInfo[move].power != 0)
+     || (gProtectStructs[battlerDef].maxGuarded)
+     || (gSideStatuses[GetBattlerSide(battlerDef)] & SIDE_STATUS_QUICK_GUARD && GetChosenMovePriority(gBattlerAttacker) > 0)
+     || (gSideStatuses[GetBattlerSide(battlerDef)] & SIDE_STATUS_MAT_BLOCK && !IS_MOVE_STATUS(move))
+     || (gSideStatuses[GetBattlerSide(battlerDef)] & SIDE_STATUS_CRAFTY_SHIELD && IS_MOVE_STATUS(move))
+     || (gSideStatuses[GetBattlerSide(battlerDef)] & SIDE_STATUS_WIDE_GUARD && GetBattlerMoveTargetType(gBattlerAttacker, move) & (MOVE_TARGET_BOTH | MOVE_TARGET_FOES_AND_ALLY)))
+    {
+        gBattleStruct->missStringId[battlerDef] = gBattleCommunication[MISS_TYPE] = B_MSG_PROTECTED;
         return TRUE;
-    else if (gSideStatuses[GetBattlerSide(battlerDef)] & SIDE_STATUS_WIDE_GUARD
-             && GetBattlerMoveTargetType(gBattlerAttacker, move) & (MOVE_TARGET_BOTH | MOVE_TARGET_FOES_AND_ALLY))
-        return TRUE;
-    else if (gProtectStructs[battlerDef].banefulBunkered)
-        return TRUE;
-    else if (gProtectStructs[battlerDef].burningBulwarked)
-        return TRUE;
-    else if ((gProtectStructs[battlerDef].obstructed || gProtectStructs[battlerDef].silkTrapped) && !IS_MOVE_STATUS(move))
-        return TRUE;
-    else if (gProtectStructs[battlerDef].spikyShielded)
-        return TRUE;
-    else if (gProtectStructs[battlerDef].kingsShielded && gMovesInfo[move].power != 0)
-        return TRUE;
-    else if (gProtectStructs[battlerDef].maxGuarded)
-        return TRUE;
-    else if (gSideStatuses[GetBattlerSide(battlerDef)] & SIDE_STATUS_QUICK_GUARD
-             && GetChosenMovePriority(gBattlerAttacker) > 0)
-        return TRUE;
-    else if (gSideStatuses[GetBattlerSide(battlerDef)] & SIDE_STATUS_MAT_BLOCK
-             && !IS_MOVE_STATUS(move))
-        return TRUE;
-    else
-        return FALSE;
+    }
+
+    return FALSE;
 }
 
 // Only called directly when calculating damage type effectiveness
@@ -10388,22 +10373,22 @@ static void UpdateMoveResultFlags(uq4_12_t modifier, u32 battler)
 {
     if (modifier == UQ_4_12(0.0))
     {
-        gBattleStruct->resultFlags[battler] |= MOVE_RESULT_DOESNT_AFFECT_FOE;
-        gBattleStruct->resultFlags[battler] &= ~(MOVE_RESULT_NOT_VERY_EFFECTIVE | MOVE_RESULT_SUPER_EFFECTIVE);
+        gBattleStruct->moveResultFlags[battler] |= MOVE_RESULT_DOESNT_AFFECT_FOE;
+        gBattleStruct->moveResultFlags[battler] &= ~(MOVE_RESULT_NOT_VERY_EFFECTIVE | MOVE_RESULT_SUPER_EFFECTIVE);
     }
     else if (modifier == UQ_4_12(1.0))
     {
-        gBattleStruct->resultFlags[battler] &= ~(MOVE_RESULT_NOT_VERY_EFFECTIVE | MOVE_RESULT_SUPER_EFFECTIVE | MOVE_RESULT_DOESNT_AFFECT_FOE);
+        gBattleStruct->moveResultFlags[battler] &= ~(MOVE_RESULT_NOT_VERY_EFFECTIVE | MOVE_RESULT_SUPER_EFFECTIVE | MOVE_RESULT_DOESNT_AFFECT_FOE);
     }
     else if (modifier > UQ_4_12(1.0))
     {
-        gBattleStruct->resultFlags[battler] |= MOVE_RESULT_SUPER_EFFECTIVE;
-        gBattleStruct->resultFlags[battler] &= ~(MOVE_RESULT_NOT_VERY_EFFECTIVE | MOVE_RESULT_DOESNT_AFFECT_FOE);
+        gBattleStruct->moveResultFlags[battler] |= MOVE_RESULT_SUPER_EFFECTIVE;
+        gBattleStruct->moveResultFlags[battler] &= ~(MOVE_RESULT_NOT_VERY_EFFECTIVE | MOVE_RESULT_DOESNT_AFFECT_FOE);
     }
     else //if (modifier < UQ_4_12(1.0))
     {
-        gBattleStruct->resultFlags[battler] |= MOVE_RESULT_NOT_VERY_EFFECTIVE;
-        gBattleStruct->resultFlags[battler] &= ~(MOVE_RESULT_SUPER_EFFECTIVE | MOVE_RESULT_DOESNT_AFFECT_FOE);
+        gBattleStruct->moveResultFlags[battler] |= MOVE_RESULT_NOT_VERY_EFFECTIVE;
+        gBattleStruct->moveResultFlags[battler] &= ~(MOVE_RESULT_SUPER_EFFECTIVE | MOVE_RESULT_DOESNT_AFFECT_FOE);
     }
 }
 
@@ -10435,7 +10420,7 @@ static inline uq4_12_t CalcTypeEffectivenessMultiplierInternal(u32 move, u32 mov
         if (recordAbilities && defAbility == ABILITY_LEVITATE)
         {
             gLastUsedAbility = ABILITY_LEVITATE;
-            gBattleStruct->resultFlags[battlerDef] |= (MOVE_RESULT_MISSED | MOVE_RESULT_DOESNT_AFFECT_FOE);
+            gBattleStruct->moveResultFlags[battlerDef] |= (MOVE_RESULT_MISSED | MOVE_RESULT_DOESNT_AFFECT_FOE);
             gLastLandedMoves[battlerDef] = 0;
             gBattleCommunication[MISS_TYPE] = B_MSG_GROUND_MISS;
             RecordAbilityBattle(battlerDef, ABILITY_LEVITATE);
@@ -10461,7 +10446,7 @@ static inline uq4_12_t CalcTypeEffectivenessMultiplierInternal(u32 move, u32 mov
         if (recordAbilities)
         {
             gLastUsedAbility = gBattleMons[battlerDef].ability;
-            gBattleStruct->resultFlags[battlerDef] |= MOVE_RESULT_MISSED;
+            gBattleStruct->moveResultFlags[battlerDef] |= MOVE_RESULT_MISSED;
             gLastLandedMoves[battlerDef] = 0;
             gBattleCommunication[MISS_TYPE] = B_MSG_AVOIDED_DMG;
             RecordAbilityBattle(battlerDef, gBattleMons[battlerDef].ability);
@@ -11856,7 +11841,7 @@ void ClearDamageCalcResults(void)
     {
         gBattleStruct->calculatedDamage[battler] = 0;
         gBattleStruct->calculatedCritChance[battler] = 0;
-        gBattleStruct->resultFlags[battler] = 0;
+        gBattleStruct->moveResultFlags[battler] = 0;
         gBattleStruct->noResultString[battler] = 0;
     }
 

@@ -3963,6 +3963,7 @@ static void HandleEndTurn_ContinueBattle(void)
         gBattleStruct->wishPerishSongState = 0;
         gBattleStruct->wishPerishSongBattlerId = 0;
         gBattleStruct->turnCountersTracker = 0;
+        ClearDamageCalcResults();
         gMoveResultFlags = 0;
     }
 }
@@ -5117,7 +5118,7 @@ static void TurnValuesCleanUp(bool8 var0)
             gBattleMons[i].status2 &= ~STATUS2_SUBSTITUTE;
 
         gSpecialStatuses[i].parentalBondState = PARENTAL_BOND_OFF;
-        gBattleStruct->resultFlags[i] = 0;
+        gBattleStruct->moveResultFlags[i] = 0;
         gBattleStruct->calculatedDamage[i] = 0;
 
     }
@@ -5127,10 +5128,7 @@ static void TurnValuesCleanUp(bool8 var0)
     gSideTimers[B_SIDE_PLAYER].followmeTimer = 0;
     gSideTimers[B_SIDE_OPPONENT].followmeTimer = 0;
     gBattleStruct->pledgeMove = FALSE; // combined pledge move may not have been used due to a canceller
-    gBattleStruct->calculatedSpreadMoveAccuracy = 0;
-    gBattleStruct->calculatedDamageDone = 0;
-    gBattleStruct->numSpreadTargets = 0;
-    gBattleStruct->doneDoublesSpreadHit = 0;
+    ClearDamageCalcResults();
 }
 
 void SpecialStatusesClear(void)
