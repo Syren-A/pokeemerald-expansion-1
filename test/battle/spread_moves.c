@@ -84,3 +84,94 @@ DOUBLE_BATTLE_TEST("t6") // Fixed issue #1961
 
     }
 }
+
+DOUBLE_BATTLE_TEST("A spread move attack will activate both resist berries")
+{
+    s16 opponentLeftDmg[2];
+    s16 opponentRightDmg[2];
+
+    GIVEN {
+        PLAYER(SPECIES_GARDEVOIR);
+        PLAYER(SPECIES_RALTS);
+        OPPONENT(SPECIES_RAICHU) { Item(ITEM_CHILAN_BERRY); }
+        OPPONENT(SPECIES_SANDSLASH) { Item(ITEM_CHILAN_BERRY); }
+    } WHEN {
+        TURN { MOVE(playerLeft, MOVE_HYPER_VOICE); }
+        TURN { MOVE(playerLeft, MOVE_HYPER_VOICE); }
+    } SCENE {
+        ANIMATION(ANIM_TYPE_GENERAL, B_ANIM_HELD_ITEM_EFFECT, opponentLeft);
+        MESSAGE("Chilan Berry weakened the damage to Foe Raichu!");
+        ANIMATION(ANIM_TYPE_GENERAL, B_ANIM_HELD_ITEM_EFFECT, opponentRight);
+        MESSAGE("Chilan Berry weakened the damage to Foe Sandslash!");
+
+        ANIMATION(ANIM_TYPE_MOVE, MOVE_HYPER_VOICE, playerLeft);
+        HP_BAR(opponentLeft, captureDamage: &opponentLeftDmg[0]);
+        HP_BAR(opponentRight, captureDamage: &opponentRightDmg[0]);
+
+        ANIMATION(ANIM_TYPE_MOVE, MOVE_HYPER_VOICE, playerLeft);
+        HP_BAR(opponentLeft, captureDamage: &opponentLeftDmg[1]);
+        HP_BAR(opponentRight, captureDamage: &opponentRightDmg[1]);
+    } THEN {
+        EXPECT_MUL_EQ(opponentLeftDmg[1], Q_4_12(0.5), opponentLeftDmg[0]);
+        EXPECT_MUL_EQ(opponentRightDmg[1], Q_4_12(0.5), opponentRightDmg[0]);
+    }
+}
+
+DOUBLE_BATTLE_TEST("If a spread move attack will activate a resist berries on one pokemon, only the damage for that mon will be reduced")
+{
+    s16 opponentLeftDmg[2];
+    s16 opponentRightDmg[2];
+
+    GIVEN {
+        PLAYER(SPECIES_GARDEVOIR);
+        PLAYER(SPECIES_RALTS);
+        OPPONENT(SPECIES_RAICHU)
+        OPPONENT(SPECIES_SANDSLASH) { Item(ITEM_CHILAN_BERRY); }
+    } WHEN {
+        TURN { MOVE(playerLeft, MOVE_HYPER_VOICE); }
+        TURN { MOVE(playerLeft, MOVE_HYPER_VOICE); }
+    } SCENE {
+        ANIMATION(ANIM_TYPE_GENERAL, B_ANIM_HELD_ITEM_EFFECT, opponentRight);
+        MESSAGE("Chilan Berry weakened the damage to Foe Sandslash!");
+
+        ANIMATION(ANIM_TYPE_MOVE, MOVE_HYPER_VOICE, playerLeft);
+        HP_BAR(opponentLeft, captureDamage: &opponentLeftDmg[0]);
+        HP_BAR(opponentRight, captureDamage: &opponentRightDmg[0]);
+
+        ANIMATION(ANIM_TYPE_MOVE, MOVE_HYPER_VOICE, playerLeft);
+        HP_BAR(opponentLeft, captureDamage: &opponentLeftDmg[1]);
+        HP_BAR(opponentRight, captureDamage: &opponentRightDmg[1]);
+    } THEN {
+        EXPECT_EQ(opponentLeftDmg[1], opponentLeftDmg[0]);
+        EXPECT_MUL_EQ(opponentRightDmg[1], Q_4_12(0.5), opponentRightDmg[0]);
+    }
+}
+
+DOUBLE_BATTLE_TEST("A spread move attack will be weakened by strong winds")
+{
+    s16 opponentLeftDmg[2];
+    s16 opponentRightDmg[2];
+
+    GIVEN {
+        PLAYER(SPECIES_GARDEVOIR);
+        PLAYER(SPECIES_RAYQUAZA) { Ability(ABILITY_AIR_LOCK); }
+        PLAYER(SPECIES_RALTS);
+        OPPONENT(SPECIES_ZAPDOS)
+        OPPONENT(SPECIES_RAYQUAZA) { Moves(MOVE_DRAGON_ASCENT, MOVE_CELEBRATE); }
+    } WHEN {
+        TURN { MOVE(opponentRight, MOVE_CELEBRATE, gimmick: GIMMICK_MEGA); MOVE(playerLeft, MOVE_ROCK_SLIDE); }
+        TURN { SWITCH(playerRight, 2); MOVE(opponentRight, MOVE_CELEBRATE); MOVE(playerLeft, MOVE_ROCK_SLIDE); }
+    } SCENE {
+        ANIMATION(ANIM_TYPE_MOVE, MOVE_ROCK_SLIDE, playerLeft);
+        HP_BAR(opponentLeft, captureDamage: &opponentLeftDmg[0]);
+        HP_BAR(opponentRight, captureDamage: &opponentRightDmg[0]);
+
+        ANIMATION(ANIM_TYPE_MOVE, MOVE_ROCK_SLIDE, playerLeft);
+        HP_BAR(opponentLeft, captureDamage: &opponentLeftDmg[1]);
+        HP_BAR(opponentRight, captureDamage: &opponentRightDmg[1]);
+    } THEN {
+        EXPECT_EQ(opponentLeftDmg[1], opponentLeftDmg[0]);
+        EXPECT_MUL_EQ(opponentRightDmg[0], Q_4_12(0.5), opponentRightDmg[1]);
+    }
+}
+

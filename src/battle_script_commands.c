@@ -1101,13 +1101,6 @@ static const u8 sTerrainToType[BATTLE_TERRAIN_COUNT] =
     [BATTLE_TERRAIN_PLAIN]            = (B_CAMOUFLAGE_TYPES >= GEN_4 ? TYPE_GROUND : TYPE_NORMAL),
 };
 
-static bool32 IsDoubleSpreadMove(void)
-{
-	return gBattleStruct->numSpreadTargets > 1
-		&& !(gHitMarker & (HITMARKER_IGNORE_SUBSTITUTE | HITMARKER_PASSIVE_DAMAGE | HITMARKER_UNABLE_TO_USE_MOVE))
-        && IsSpreadMove(GetBattlerMoveTargetType(gBattlerAttacker, gCurrentMove));
-}
-
 static bool32 NoTargetPresent(u8 battler, u32 move)
 {
     if (!IsBattlerAlive(gBattlerTarget))
@@ -2205,16 +2198,6 @@ static void Cmd_adjustdamage(void)
     gMoveResultFlags = gBattleStruct->moveResultFlags[gBattlerTarget];
     gBattlescriptCurrInstr = cmd->nextInstr;
 
-
-    // Check gems and damage reducing berries.
-    if (gSpecialStatuses[gBattlerTarget].berryReduced
-        && !(gMoveResultFlags & MOVE_RESULT_NO_EFFECT)
-        && gBattleMons[gBattlerTarget].item)
-    {
-        BattleScriptPushCursor();
-        gBattlescriptCurrInstr = BattleScript_BerryReduceDmg;
-        gLastUsedItem = gBattleMons[gBattlerTarget].item;
-    }
     if (gSpecialStatuses[gBattlerAttacker].gemBoost
         && !(gMoveResultFlags & MOVE_RESULT_NO_EFFECT)
         && gBattleMons[gBattlerAttacker].item
@@ -2224,23 +2207,6 @@ static void Cmd_adjustdamage(void)
         BattleScriptPushCursor();
         gBattlescriptCurrInstr = BattleScript_GemActivates;
         gLastUsedItem = gBattleMons[gBattlerAttacker].item;
-    }
-
-    // B_WEATHER_STRONG_WINDS prints a string when it's about to reduce the power
-    // of a move that is Super Effective against a Flying-type Pokémon.
-    if (gBattleWeather & B_WEATHER_STRONG_WINDS)
-    {
-        if ((GetBattlerType(gBattlerTarget, 0, FALSE) == TYPE_FLYING
-         && GetTypeModifier(moveType, GetBattlerType(gBattlerTarget, 0, FALSE)) >= UQ_4_12(2.0))
-         || (GetBattlerType(gBattlerTarget, 1, FALSE) == TYPE_FLYING
-         && GetTypeModifier(moveType, GetBattlerType(gBattlerTarget, 1, FALSE)) >= UQ_4_12(2.0))
-         || (GetBattlerType(gBattlerTarget, 2, FALSE) == TYPE_FLYING
-         && GetTypeModifier(moveType, GetBattlerType(gBattlerTarget, 2, FALSE)) >= UQ_4_12(2.0)))
-        {
-            gBattlerAbility = gBattlerTarget;
-            BattleScriptPushCursor();
-            gBattlescriptCurrInstr = BattleScript_AttackWeakenedByStrongWinds;
-        }
     }
 }
 
@@ -2274,26 +2240,16 @@ static void Cmd_multihitresultmessage(void)
         }
     }
     gBattlescriptCurrInstr = cmd->nextInstr;
-
-    // Print berry reducing message after result message.
-    if (gSpecialStatuses[gBattlerTarget].berryReduced
-        && !(gMoveResultFlags & MOVE_RESULT_NO_EFFECT))
-    {
-        gBattleStruct->ateBerry[gBattlerTarget & BIT_SIDE] |= 1u << gBattlerPartyIndexes[gBattlerTarget];
-        gSpecialStatuses[gBattlerTarget].berryReduced = FALSE;
-        BattleScriptPushCursor();
-        gBattlescriptCurrInstr = BattleScript_PrintBerryReduceString;
-    }
 }
 
 static void Cmd_attackanimation(void)
 {
     CMD_ARGS();
 
-    u16 moveTarget = GetBattlerMoveTargetType(gBattlerAttacker, gCurrentMove);
-
-    if (gBattleControllerExecFlags)
+    if (gBattleControllerExecFlags || ProcessPreAttackAnimationFuncs())
         return;
+
+    u16 moveTarget = GetBattlerMoveTargetType(gBattlerAttacker, gCurrentMove);
 
     if ((gHitMarker & (HITMARKER_NO_ANIMATIONS | HITMARKER_DISABLE_ANIMATION))
         && gCurrentMove != MOVE_TRANSFORM
@@ -2764,11 +2720,20 @@ static void Cmd_resultmessage(void)
             if (IsDoubleSpreadMove())
             {
 				if (ShouldPrintTwoFoesMessage(MOVE_RESULT_SUPER_EFFECTIVE))
-					stringId = STRINGID_PLACEHOLDER;
+                {
+                    if (GetBattlerSide(gBattlerAttacker) == B_SIDE_PLAYER)
+                        stringId = STRINGID_SUPEREFFECTIVETWOOPPOSINGFOES;
+                    else
+                        stringId = STRINGID_SUPEREFFECTIVETWOFOES;
+                }
 				else if (ShouldRelyOnTwoFoesMessage(MOVE_RESULT_SUPER_EFFECTIVE))
+                {
 					stringId = 0; // Was handled or will be handled as a double string
+                }
                 else
-                    stringId = STRINGID_PLACEHOLDER;
+                {
+                    stringId = STRINGID_SUPEREFFECTIVE;
+                }
             }
             else if (!gMultiHitCounter)  // Don't print effectiveness on each hit in a multi hit attack
             {
@@ -2785,11 +2750,11 @@ static void Cmd_resultmessage(void)
 			if (IsDoubleSpreadMove())
 			{
 				if (ShouldPrintTwoFoesMessage(MOVE_RESULT_NOT_VERY_EFFECTIVE))
-					stringId = STRINGID_PLACEHOLDER;
+					stringId = STRINGID_NOTVERYEFFECTIVE; // Needs a string
 				else if (ShouldRelyOnTwoFoesMessage(MOVE_RESULT_NOT_VERY_EFFECTIVE))
 					stringId = 0; // Was handled or will be handled as a double string
 				else
-					stringId = STRINGID_PLACEHOLDER;
+					stringId = STRINGID_NOTVERYEFFECTIVE; // Needs a string
 			}
             else if (!gMultiHitCounter)
                 stringId = STRINGID_NOTVERYEFFECTIVE;
@@ -2819,7 +2784,7 @@ static void Cmd_resultmessage(void)
                 if (IsDoubleSpreadMove())
                 {
                     if (ShouldPrintTwoFoesMessage(MOVE_RESULT_DOESNT_AFFECT_FOE))
-                        stringId = STRINGID_PLACEHOLDER;
+                        stringId = STRINGID_ITDOESNTAFFECT; // Change string
                     else if (ShouldRelyOnTwoFoesMessage(MOVE_RESULT_DOESNT_AFFECT_FOE))
                         stringId = 0; // Was handled or will be handled as a double string
                     else
@@ -2885,16 +2850,6 @@ static void Cmd_resultmessage(void)
         PrepareStringBattle(stringId, gBattlerAttacker);
 
     gBattlescriptCurrInstr = cmd->nextInstr;
-
-    // Print berry reducing message after result message.
-    if (gSpecialStatuses[gBattlerTarget].berryReduced
-        && !(gMoveResultFlags & MOVE_RESULT_NO_EFFECT))
-    {
-        gBattleStruct->ateBerry[gBattlerTarget & BIT_SIDE] |= 1u << gBattlerPartyIndexes[gBattlerTarget];
-        gSpecialStatuses[gBattlerTarget].berryReduced = FALSE;
-        BattleScriptPushCursor();
-        gBattlescriptCurrInstr = BattleScript_PrintBerryReduceString;
-    }
 }
 
 static void Cmd_printstring(void)

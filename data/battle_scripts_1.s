@@ -8849,18 +8849,12 @@ BattleScript_GemActivates::
 	return
 
 BattleScript_BerryReduceDmg::
-	playanimation BS_TARGET, B_ANIM_HELD_ITEM_EFFECT
+	playanimation BS_SCRIPTING, B_ANIM_HELD_ITEM_EFFECT
 	waitanimation
-	setlastuseditem BS_TARGET
-	printstring STRINGID_TARGETATEITEM
-	waitmessage B_WAIT_TIME_LONG
-	removeitem BS_TARGET
-	return
-
-BattleScript_PrintBerryReduceString::
-	waitmessage B_WAIT_TIME_LONG
+	setlastuseditem BS_SCRIPTING
 	printstring STRINGID_BERRYDMGREDUCES
 	waitmessage B_WAIT_TIME_LONG
+	removeitem BS_SCRIPTING
 	return
 
 BattleScript_BerryCureConfusionEnd2::

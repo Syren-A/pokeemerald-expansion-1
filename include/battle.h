@@ -829,6 +829,7 @@ struct BattleStruct
     u8 doneDoublesSpreadHit:1;
     u8 calculatedDamageDone:1;
     u8 calculatedSpreadMoveAccuracy:1;
+    u8 printedStrongWindsWeakenedAttack:1;
     u8 numSpreadTargets:2;
 };
 
@@ -1186,6 +1187,13 @@ static inline bool32 IsDoubleBattle(void)
 static inline bool32 IsSpreadMove(u32 moveTarget)
 {
     return IsDoubleBattle() && (moveTarget == MOVE_TARGET_BOTH || moveTarget == MOVE_TARGET_FOES_AND_ALLY);
+}
+
+static inline bool32 IsDoubleSpreadMove(void)
+{
+	return gBattleStruct->numSpreadTargets > 1
+		&& !(gHitMarker & (HITMARKER_IGNORE_SUBSTITUTE | HITMARKER_PASSIVE_DAMAGE | HITMARKER_UNABLE_TO_USE_MOVE))
+        && IsSpreadMove(GetBattlerMoveTargetType(gBattlerAttacker, gCurrentMove));
 }
 
 #endif // GUARD_BATTLE_H

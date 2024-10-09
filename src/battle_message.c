@@ -693,7 +693,7 @@ static const u8 sText_CelebrateMessage[] = _("Congratulations, {B_PLAYER_NAME}!"
 static const u8 sText_UsedInstructedMove[] = _("{B_ATK_NAME_WITH_PREFIX} used the move\ninstructed by {B_BUFF1}!");
 static const u8 sText_LaserFocusMessage[] = _("{B_ATK_NAME_WITH_PREFIX}\nconcentrated intensely!");
 static const u8 sText_GemActivates[] = _("{B_LAST_ITEM} strengthened\n{B_ATK_NAME_WITH_PREFIX}'s power!");
-static const u8 sText_BerryDmgReducing[] = _("{B_LAST_ITEM} weakened the damage\nto {B_DEF_NAME_WITH_PREFIX}!");
+static const u8 sText_BerryDmgReducing[] = _("{B_LAST_ITEM} weakened the damage\nto {B_SCR_ACTIVE_NAME_WITH_PREFIX}!");
 static const u8 sText_TargetAteItem[] = _("{B_DEF_NAME_WITH_PREFIX} ate its {B_LAST_ITEM}!");
 static const u8 sText_AirBalloonFloat[] = _("{B_SCR_ACTIVE_NAME_WITH_PREFIX} floats in the air\nwith its {B_LAST_ITEM}!");
 static const u8 sText_AirBalloonPop[] = _("{B_DEF_NAME_WITH_PREFIX}'s {B_LAST_ITEM} popped!");
@@ -849,11 +849,13 @@ static const u8 sText_PkmnTerastallizedInto[] = _("{B_ATK_NAME_WITH_PREFIX} tera
 static const u8 sText_SupersweetAromaWafts[] = _("A supersweet aroma is wafting from\nthe syrup covering {B_ATK_NAME_WITH_PREFIX}!");
 static const u8 sText_TidyingUpComplete[] = _("Tidying up complete!");
 static const u8 sText_FickleBeamDoubled[] = _("{B_ATK_NAME_WITH_PREFIX} is going all\nout for this attack!");
-static const u8 sText_SuperEffectiveTwoFoes[] = _("Placeholder!");
+static const u8 gText_SuperEffectiveTwoFoes[] = _("It's super effective on {B_ATK_NAME_WITH_PREFIX}\nand {B_ATK_PARTNER_NAME}!");
+static const u8 sText_SuperEffectiveTwoOpposingFoes[] = _("It's super effective on the opposing\n{B_ATK_NAME_WITH_PREFIX} and {B_ATK_PARTNER_NAME}!");
 
 const u8 *const gBattleStringsTable[BATTLESTRINGS_COUNT] =
 {
-    [STRINGID_PLACEHOLDER - BATTLESTRINGS_TABLE_START] = sText_SuperEffectiveTwoFoes,
+    [STRINGID_SUPEREFFECTIVETWOFOES - BATTLESTRINGS_TABLE_START] = gText_SuperEffectiveTwoFoes,
+    [STRINGID_SUPEREFFECTIVETWOOPPOSINGFOES - BATTLESTRINGS_TABLE_START] = sText_SuperEffectiveTwoOpposingFoes,
 
     [STRINGID_FICKLEBEAMDOUBLED - BATTLESTRINGS_TABLE_START] = sText_FickleBeamDoubled,
     [STRINGID_PKMNTERASTALLIZEDINTO - BATTLESTRINGS_TABLE_START] = sText_PkmnTerastallizedInto,
@@ -3374,6 +3376,10 @@ u32 BattleStringExpandPlaceholders(const u8 *src, u8 *dst)
                 HANDLE_NICKNAME_STRING_CASE(gBattlerTarget)
                 break;
             case B_TXT_DEF_NAME: // target name
+                GetBattlerNick(gBattlerTarget, text);
+                toCpy = text;
+                break;
+            case B_TXT_DEF_PARTNER_NAME: // partner target name
                 GetBattlerNick(gBattlerTarget, text);
                 toCpy = text;
                 break;

@@ -11835,6 +11835,92 @@ u32 GetMoveType(u32 move)
     return gMovesInfo[move].type;
 }
 
+static inline bool32 TryStrongWindsWeakenAttack(u32 battlerDef)
+{
+    // B_WEATHER_STRONG_WINDS prints a string when it's about to reduce the power
+    // of a move that is Super Effective against a Flying-type Pokémon.
+    if (gBattleWeather & B_WEATHER_STRONG_WINDS && WEATHER_HAS_EFFECT)
+    {
+        if (gMovesInfo[gCurrentMove].category != DAMAGE_CATEGORY_STATUS
+         && IS_BATTLER_OF_TYPE(gBattlerTarget, TYPE_FLYING)
+         && gTypeEffectivenessTable[GetMoveType(gCurrentMove)][TYPE_FLYING] >= UQ_4_12(2.0)
+         && !gBattleStruct->printedStrongWindsWeakenedAttack)
+        {
+            gBattleStruct->printedStrongWindsWeakenedAttack = TRUE;
+            gBattlerAbility = gBattlerTarget;
+            BattleScriptPushCursor();
+            gBattlescriptCurrInstr = BattleScript_AttackWeakenedByStrongWinds;
+            return TRUE;
+        }
+    }
+
+	return FALSE;
+}
+
+static inline bool32 TryActivateWeakenessBerry(u32 battlerDef, u32 resultFlags)
+{
+    if (gSpecialStatuses[battlerDef].berryReduced && gBattleMons[battlerDef].item != ITEM_NONE)
+    {
+        gSpecialStatuses[battlerDef].berryReduced = FALSE;
+        gBattleScripting.battler = battlerDef;
+        gLastUsedItem = gBattleMons[battlerDef].item;
+        gBattleStruct->ateBerry[battlerDef & BIT_SIDE] |= 1u << gBattlerPartyIndexes[battlerDef];
+        BattleScriptPushCursor();
+        gBattlescriptCurrInstr = BattleScript_BerryReduceDmg;
+        return TRUE;
+    }
+
+	return FALSE;
+}
+
+static inline bool32 BattlerNotViableForSpreadAttack(u32 battlerDef, u32 moveTarget)
+{
+    return battlerDef == gBattlerAttacker
+        || !IsBattlerAlive(battlerDef)
+        || (battlerDef == BATTLE_PARTNER(gBattlerAttacker) && !(moveTarget & MOVE_TARGET_FOES_AND_ALLY))
+        || (gBattleStruct->noResultString[battlerDef] && gBattleStruct->noResultString[battlerDef] != DO_ACCURACY_CHECK);
+}
+
+bool32 ProcessPreAttackAnimationFuncs(void)
+{
+	if (IsDoubleSpreadMove())
+	{
+        u32 moveTarget = GetBattlerMoveTargetType(gBattlerAttacker, gCurrentMove);
+		if (!gBattleStruct->printedStrongWindsWeakenedAttack)
+		{
+			for (u32 battlerDef = 0; battlerDef < gBattlersCount; battlerDef++)
+			{
+                if (BattlerNotViableForSpreadAttack(battlerDef, moveTarget))
+                    continue;
+
+				if (TryStrongWindsWeakenAttack(battlerDef))
+					return TRUE;
+			}
+		}
+
+		for (u32 battlerDef = 0; battlerDef < gBattlersCount; battlerDef++)
+		{
+            if (BattlerNotViableForSpreadAttack(battlerDef, moveTarget))
+                continue;
+
+            // According to Gen5 this happens after the attackanimation.
+            // It doesn't have any impact on gameplay and is only a visual thing which can be adjust later.
+			if (TryActivateWeakenessBerry(battlerDef, gBattleStruct->moveResultFlags[battlerDef]))
+				return TRUE;
+		}
+	}
+	else
+	{
+		if (TryStrongWindsWeakenAttack(gBattlerTarget))
+			return TRUE;
+
+		if (TryActivateWeakenessBerry(gBattlerTarget, gMoveResultFlags))
+            return TRUE;
+	}
+
+	return FALSE;
+}
+
 void ClearDamageCalcResults(void)
 {
     for (u32 battler = 0; battler < MAX_BATTLERS_COUNT; battler++)
@@ -11845,8 +11931,9 @@ void ClearDamageCalcResults(void)
         gBattleStruct->noResultString[battler] = 0;
     }
 
-    gBattleStruct->doneDoublesSpreadHit = 0;
-    gBattleStruct->calculatedDamageDone = 0;
-    gBattleStruct->calculatedSpreadMoveAccuracy = 0;
+    gBattleStruct->doneDoublesSpreadHit = FALSE;
+    gBattleStruct->calculatedDamageDone = FALSE;
+    gBattleStruct->calculatedSpreadMoveAccuracy = FALSE;
+    gBattleStruct->printedStrongWindsWeakenedAttack = FALSE;
     gBattleStruct->numSpreadTargets = 0;
 }
