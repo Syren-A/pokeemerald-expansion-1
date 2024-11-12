@@ -138,7 +138,6 @@ void HandleAction_UseMove(void)
         return;
     }
 
-    gIsCriticalHit = FALSE;
     gBattleStruct->atkCancellerTracker = 0;
     ClearDamageCalcResults();
     gMoveResultFlags = 0;
@@ -5669,7 +5668,7 @@ u32 AbilityBattleEffects(u32 caseID, u32 battler, u32 ability, u32 special, u32 
             break;
         case ABILITY_ANGER_POINT:
             if (!(gMoveResultFlags & MOVE_RESULT_NO_EFFECT)
-             && gIsCriticalHit
+             && gSpecialStatuses[battler].criticalHit
              && TARGET_TURN_DAMAGED
              && IsBattlerAlive(battler)
              && CompareStat(battler, STAT_ATK, MAX_STAT_STAGE, CMP_LESS_THAN))
@@ -12048,6 +12047,7 @@ void ClearDamageCalcResults(void)
         gBattleStruct->calculatedCritChance[battler] = 0;
         gBattleStruct->moveResultFlags[battler] = 0;
         gBattleStruct->noResultString[battler] = 0;
+        gSpecialStatuses[battler].criticalHit = FALSE;
     }
 
     gBattleStruct->doneDoublesSpreadHit = FALSE;

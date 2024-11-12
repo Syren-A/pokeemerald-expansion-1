@@ -1981,8 +1981,8 @@ s32 CalcCritChanceStageArgs(u32 battlerAtk, u32 battlerDef, u32 move, bool32 rec
         critChance = -1;
     }
     else if (gStatuses3[battlerAtk] & STATUS3_LASER_FOCUS
-        || gMovesInfo[move].alwaysCriticalHit
-        || (abilityAtk == ABILITY_MERCILESS && gBattleMons[battlerDef].status1 & STATUS1_PSN_ANY))
+          || gMovesInfo[move].alwaysCriticalHit
+          || (abilityAtk == ABILITY_MERCILESS && gBattleMons[battlerDef].status1 & STATUS1_PSN_ANY))
     {
         critChance = -2;
     }
@@ -2003,13 +2003,9 @@ s32 CalcCritChanceStageArgs(u32 battlerAtk, u32 battlerDef, u32 move, bool32 rec
     if (critChance != -1 && (abilityDef == ABILITY_BATTLE_ARMOR || abilityDef == ABILITY_SHELL_ARMOR))
     {
         // Record ability only if move had 100% chance to get a crit
-        if (recordAbility)
-        {
-            if (critChance == -2)
-                RecordAbilityBattle(battlerDef, abilityDef);
-            else if (GetCriticalHitOdds(critChance) == 1)
-                RecordAbilityBattle(battlerDef, abilityDef);
-        }
+        if (recordAbility && (critChance == -2 || GetCriticalHitOdds(critChance) == 1))
+            RecordAbilityBattle(battlerDef, abilityDef);
+
         critChance = -1;
     }
 
@@ -2107,21 +2103,12 @@ static void Cmd_critcalc(void)
 {
     CMD_ARGS();
 
-    u32 partySlot;
-    u32 battlerDef;
-    s32 critChance;
+    u32 partySlot = gBattlerPartyIndexes[gBattlerAttacker];
     u32 moveTarget = GetBattlerMoveTargetType(gBattlerAttacker, gCurrentMove);
     bool32 calcSpreadMoveDamage = IsSpreadMove(moveTarget) && !IS_MOVE_STATUS(gCurrentMove);
-
-    // TODO: Implent gen1 crit into the mix
-    if (B_CRIT_CHANCE == GEN_1)
-        critChance = CalcCritChanceStageGen1(gBattlerAttacker, gBattlerTarget, gCurrentMove, TRUE);
-    else
-        critChance = CalcCritChanceStage(gBattlerAttacker, gBattlerTarget, gCurrentMove, TRUE);
-
     gPotentialItemEffectBattler = gBattlerAttacker;
 
-    for (battlerDef = 0; battlerDef < gBattlersCount; battlerDef++)
+    for (u32 battlerDef = 0; battlerDef < gBattlersCount; battlerDef++)
     {
         if (gBattleStruct->calculatedDamageDone)
             break;
@@ -2136,35 +2123,38 @@ static void Cmd_critcalc(void)
           || gBattleStruct->moveResultFlags[battlerDef] & MOVE_RESULT_NO_EFFECT)
             continue;
 
-        gBattleStruct->calculatedCritChance[battlerDef] = CalcCritChanceStage(gBattlerAttacker, gBattlerTarget, gCurrentMove, TRUE);
-    }
-
-    if (gBattleTypeFlags & (BATTLE_TYPE_WALLY_TUTORIAL | BATTLE_TYPE_FIRST_BATTLE))
-        gIsCriticalHit = FALSE;
-    else if (gBattleStruct->calculatedCritChance[gBattlerTarget] == -1)
-        gIsCriticalHit = FALSE;
-    else if (gBattleStruct->calculatedCritChance[gBattlerTarget] == -2)
-        gIsCriticalHit = TRUE;
-    else
-    {
-        // TODO: Take care of gen1 crit chance
         if (B_CRIT_CHANCE == GEN_1)
-        {
-            u8 critRoll = RandomUniform(RNG_CRITICAL_HIT, 1, 256);
-            if (critRoll <= critChance)
-                gIsCriticalHit = 1;
-            else
-                gIsCriticalHit = 0;
-        }
+            gBattleStruct->calculatedCritChance[battlerDef] = CalcCritChanceStageGen1(gBattlerAttacker, battlerDef, gCurrentMove, TRUE);
         else
-            gIsCriticalHit = RandomChance(RNG_CRITICAL_HIT, 1, sCriticalHitOdds[gBattleStruct->calculatedCritChance[gBattlerTarget]]);
-    }
+            gBattleStruct->calculatedCritChance[battlerDef] = CalcCritChanceStage(gBattlerAttacker, battlerDef, gCurrentMove, TRUE);
 
-    // Counter for EVO_CRITICAL_HITS.
-    partySlot = gBattlerPartyIndexes[gBattlerAttacker];
-    if (gIsCriticalHit && GetBattlerSide(gBattlerAttacker) == B_SIDE_PLAYER
-        && !(gBattleTypeFlags & BATTLE_TYPE_MULTI && GetBattlerPosition(gBattlerAttacker) == B_POSITION_PLAYER_LEFT))
-        gPartyCriticalHits[partySlot]++;
+        if (gBattleTypeFlags & (BATTLE_TYPE_WALLY_TUTORIAL | BATTLE_TYPE_FIRST_BATTLE))
+            gSpecialStatuses[battlerDef].criticalHit = FALSE;
+        else if (gBattleStruct->calculatedCritChance[battlerDef] == -1)
+            gSpecialStatuses[battlerDef].criticalHit = FALSE;
+        else if (gBattleStruct->calculatedCritChance[battlerDef] == -2)
+            gSpecialStatuses[battlerDef].criticalHit = TRUE;
+        else
+        {
+            if (B_CRIT_CHANCE == GEN_1)
+            {
+                u32 critRoll = RandomUniform(RNG_CRITICAL_HIT, 1, 256);
+                if (critRoll <= gBattleStruct->calculatedCritChance[battlerDef])
+                    gSpecialStatuses[battlerDef].criticalHit = TRUE;
+                else
+                    gSpecialStatuses[battlerDef].criticalHit = FALSE;
+            }
+            else
+            {
+                gSpecialStatuses[battlerDef].criticalHit = RandomChance(RNG_CRITICAL_HIT, 1, GetCriticalHitOdds(gBattleStruct->calculatedCritChance[battlerDef]));
+            }
+        }
+
+        // Counter for EVO_CRITICAL_HITS.
+        if (gSpecialStatuses[battlerDef].criticalHit && GetBattlerSide(gBattlerAttacker) == B_SIDE_PLAYER
+         && !(gBattleTypeFlags & BATTLE_TYPE_MULTI && GetBattlerPosition(gBattlerAttacker) == B_POSITION_PLAYER_LEFT))
+            gPartyCriticalHits[partySlot]++;
+    }
 
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
@@ -2194,8 +2184,6 @@ static void Cmd_damagecalc(void)
         u32 battlerDef;
         for (battlerDef = 0; battlerDef < gBattlersCount; battlerDef++)
         {
-            damageCalcData.battlerDef = battlerDef;
-            damageCalcData.isCrit = gIsCriticalHit;
             if (!IsBattlerAlive(battlerDef)
              || battlerDef == gBattlerAttacker
              || (battlerDef == BATTLE_PARTNER(gBattlerAttacker) && (moveTarget == MOVE_TARGET_BOTH))
@@ -2205,15 +2193,18 @@ static void Cmd_damagecalc(void)
 
             if (gMovesInfo[gCurrentMove].effect == EFFECT_SHELL_SIDE_ARM)
                 gBattleStruct->swapDamageCategory = (gBattleStruct->shellSideArmCategory[gBattlerAttacker][battlerDef] != gMovesInfo[gCurrentMove].category);
+
+            damageCalcData.battlerDef = battlerDef;
+            damageCalcData.isCrit = gSpecialStatuses[battlerDef].criticalHit;
             gBattleStruct->calculatedDamage[battlerDef] = CalculateMoveDamage(&damageCalcData, 0);
         }
     }
     else
     {
-        damageCalcData.battlerDef = gBattlerTarget;
-        damageCalcData.isCrit = gIsCriticalHit;
         if (gMovesInfo[gCurrentMove].effect == EFFECT_SHELL_SIDE_ARM)
             gBattleStruct->swapDamageCategory = (gBattleStruct->shellSideArmCategory[gBattlerAttacker][gBattlerTarget] != gMovesInfo[gCurrentMove].category);
+        damageCalcData.battlerDef = gBattlerTarget;
+        damageCalcData.isCrit = gSpecialStatuses[gBattlerTarget].criticalHit;
         gBattleStruct->calculatedDamage[gBattlerTarget] = CalculateMoveDamage(&damageCalcData, 0);
     }
 
@@ -2241,7 +2232,6 @@ static void Cmd_adjustdamage(void)
     u32 battlerDef;
     u32 rand = Random() % 100;
     u32 affectionScore = GetBattlerAffectionHearts(gBattlerTarget);
-    u32 moveType = GetMoveType(gCurrentMove);
     u32 moveTarget = GetBattlerMoveTargetType(gBattlerAttacker, gCurrentMove);
     bool32 calcSpreadMoveDamage = IsSpreadMove(moveTarget) && !IS_MOVE_STATUS(gCurrentMove);
 
@@ -2693,7 +2683,7 @@ static void Cmd_critmessage(void)
 
     if (gBattleControllerExecFlags == 0)
     {
-        if (gIsCriticalHit == TRUE && !(gMoveResultFlags & MOVE_RESULT_NO_EFFECT))
+        if (gSpecialStatuses[gBattlerTarget].criticalHit && !(gMoveResultFlags & MOVE_RESULT_NO_EFFECT))
         {
             PrepareStringBattle(STRINGID_CRITICALHIT, gBattlerAttacker);
 
@@ -5072,7 +5062,6 @@ static void Cmd_checkteamslost(void)
 static void MoveValuesCleanUp(void)
 {
     gMoveResultFlags = 0;
-    gIsCriticalHit = FALSE;
     gBattleScripting.moveEffect = 0;
     gBattleCommunication[MISS_TYPE] = 0;
     if (!gMultiHitCounter)

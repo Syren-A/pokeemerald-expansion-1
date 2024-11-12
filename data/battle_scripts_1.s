@@ -4629,7 +4629,7 @@ BattleScript_BeatUpLoop::
 	trydobeatup BattleScript_BeatUpEnd, BattleScript_ButItFailed
 	printstring STRINGID_PKMNATTACK
 	critcalc
-	jumpifbyte CMP_NOT_EQUAL, gIsCriticalHit, TRUE, BattleScript_BeatUpAttack
+	jumpifbyte CMP_NOT_EQUAL, gIsCriticalHit, TRUE, BattleScript_BeatUpAttack @ TODO Add Callnative to check specific crit
 	manipulatedamage DMG_DOUBLED
 BattleScript_BeatUpAttack::
 	adjustdamage
@@ -4786,7 +4786,6 @@ BattleScript_EffectSpitUp::
 	attackstring
 	ppreduce
 	accuracycheck BattleScript_PrintMoveMissed, ACC_CURR_MOVE
-	setbyte gIsCriticalHit, FALSE
 	damagecalc
 	adjustdamage
 	stockpiletobasedamage BattleScript_SpitUpFail
@@ -6970,7 +6969,6 @@ BattleScript_MegaEvolution::
 	printstring STRINGID_MEGAEVOREACTING
 BattleScript_MegaEvolutionAfterString:
 	waitmessage B_WAIT_TIME_LONG
-	setbyte gIsCriticalHit, 0
 	handlemegaevo BS_SCRIPTING, 0
 	playanimation BS_SCRIPTING, B_ANIM_MEGA_EVOLUTION
 	waitanimation
@@ -6988,7 +6986,6 @@ BattleScript_WishMegaEvolution::
 
 BattleScript_PrimalReversion::
 	flushtextbox
-	setbyte gIsCriticalHit, 0
 	handleprimalreversion BS_SCRIPTING, 0
 	handleprimalreversion BS_SCRIPTING, 1
 	playanimation BS_SCRIPTING, B_ANIM_PRIMAL_REVERSION
@@ -7004,7 +7001,6 @@ BattleScript_UltraBurst::
 	trytrainerslidezmovemsg
 	printstring STRINGID_ULTRABURSTREACTING
 	waitmessage B_WAIT_TIME_LONG
-	setbyte gIsCriticalHit, 0
 	handleultraburst BS_SCRIPTING, 0
 	playanimation BS_SCRIPTING, B_ANIM_ULTRA_BURST
 	waitanimation

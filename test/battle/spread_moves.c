@@ -57,6 +57,23 @@ DOUBLE_BATTLE_TEST("Spread Moves: t6") // Fixed issue #1961
     }
 }
 
+DOUBLE_BATTLE_TEST("Spread Moves: No damage will be dealt to a mon with an invulnerable position")
+{
+    KNOWN_FAILING; // TODO: Fix Move Result Flags
+    GIVEN {
+        PLAYER(SPECIES_WOBBUFFET);
+        PLAYER(SPECIES_WYNAUT);
+        OPPONENT(SPECIES_ZAPDOS);
+        OPPONENT(SPECIES_WOBBUFFET);
+    } WHEN {
+        TURN { MOVE(opponentLeft, MOVE_FLY, target: playerLeft); MOVE(playerLeft, MOVE_HYPER_VOICE); }
+    } SCENE {
+        ANIMATION(ANIM_TYPE_MOVE, MOVE_HYPER_VOICE, playerLeft);
+        NOT HP_BAR(opponentLeft);
+        HP_BAR(opponentRight);
+    }
+}
+
 DOUBLE_BATTLE_TEST("Spread Moves: A spread move attack will activate both resist berries")
 {
     s16 opponentLeftDmg[2];
