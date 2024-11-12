@@ -1,4 +1,6 @@
 // jsonproc.cpp
+// jsonproc converts JSON data to an output file based on an Inja template. 
+// https://github.com/pantor/inja
 
 #include "jsonproc.h"
 
@@ -116,27 +118,6 @@ int main(int argc, char *argv[])
             }
         }
         return str;
-    });
-
-    env.add_callback("stringContains", 2, [](Arguments& args) {
-        string str = args.at(0)->get<string>();
-        string check = args.at(1)->get<string>();
-
-        return str.find(check) != std::string::npos;
-    });
-
-    env.add_callback("stringStartsWith", 2, [](Arguments& args) {
-        string str = args.at(0)->get<string>();
-        string check = args.at(1)->get<string>();
-
-        return str.find(check) == 0;
-    });
-
-    env.add_callback("stringEndsWith", 2, [](Arguments& args) {
-        string str = args.at(0)->get<string>();
-        string check = args.at(1)->get<string>();
-
-        return str.rfind(check) == (str.length() - check.length());
     });
 
     try

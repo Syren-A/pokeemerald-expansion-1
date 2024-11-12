@@ -32,7 +32,7 @@ SINGLE_BATTLE_TEST("Explosion causes the user & the target to faint")
         HP_BAR(player, hp: 0);
         ANIMATION(ANIM_TYPE_MOVE, MOVE_EXPLOSION, player);
         HP_BAR(opponent, hp: 0);
-        MESSAGE("Foe Wobbuffet fainted!");
+        MESSAGE("The opposing Wobbuffet fainted!");
         MESSAGE("Wobbuffet fainted!");
     }
 }
@@ -62,7 +62,7 @@ SINGLE_BATTLE_TEST("Explosion causes the user to faint even if it has no effect"
         TURN { MOVE(player, MOVE_EXPLOSION); }
     } SCENE {
         HP_BAR(player, hp: 0);
-        MESSAGE("It doesn't affect Foe Gastly…");
+        MESSAGE("It doesn't affect the opposing Gastly…");
         NOT HP_BAR(opponent);
         MESSAGE("Wobbuffet fainted!");
     }
@@ -84,9 +84,8 @@ DOUBLE_BATTLE_TEST("Explosion causes everyone to faint in a double battle")
         HP_BAR(opponentLeft, hp: 0);
         HP_BAR(playerRight, hp: 0);
         HP_BAR(opponentRight, hp: 0);
-        MESSAGE("Foe Abra fainted!");
-        MESSAGE("Wynaut fainted!");
-        MESSAGE("Foe Kadabra fainted!");
+        MESSAGE("The opposing Abra fainted!");
+        MESSAGE("The opposing Kadabra fainted!");
         MESSAGE("Wobbuffet fainted!");
     }
 }
@@ -104,7 +103,7 @@ SINGLE_BATTLE_TEST("Explosion is blocked by Ability Damp")
             HP_BAR(player, hp: 0);
         }
         ABILITY_POPUP(opponent, ABILITY_DAMP);
-        MESSAGE("Foe Golduck's Damp prevents Wobbuffet from using Explosion!");
+        MESSAGE("The opposing Golduck's Damp prevents Wobbuffet from using Explosion!");
     }
 }
 
@@ -127,7 +126,7 @@ SINGLE_BATTLE_TEST("Explosion does not trigger Destiny Bond")
 DOUBLE_BATTLE_TEST("Explosion boosted by Galvanize is correctly blocked by Volt Absorb")
 {
     GIVEN {
-        PLAYER(SPECIES_GEODUDE_ALOLAN) { Ability(ABILITY_GALVANIZE); }
+        PLAYER(SPECIES_GEODUDE_ALOLA) { Ability(ABILITY_GALVANIZE); }
         PLAYER(SPECIES_WYNAUT) { HP(1); }
         OPPONENT(SPECIES_LANTURN) { Ability(ABILITY_VOLT_ABSORB); }
         OPPONENT(SPECIES_WOBBUFFET) { HP(1); }
@@ -140,8 +139,8 @@ DOUBLE_BATTLE_TEST("Explosion boosted by Galvanize is correctly blocked by Volt 
         NOT HP_BAR(opponentLeft, hp: 0);
         HP_BAR(playerRight, hp: 0);
         HP_BAR(opponentRight, hp: 0);
-        MESSAGE("Wynaut fainted!");
-        MESSAGE("Foe Wobbuffet fainted!");
+        MESSAGE("The opposing Wynaut fainted!");
+        MESSAGE("The opposing Wobbuffet fainted!");
         MESSAGE("Geodude fainted!");
     }
 }

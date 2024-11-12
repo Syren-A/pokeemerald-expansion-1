@@ -19,7 +19,7 @@
 #include "field_weather.h"
 #include "graphics.h"
 #include "item.h"
-#include "level_caps.h"
+#include "caps.h"
 #include "link.h"
 #include "main.h"
 #include "overworld.h"
@@ -60,9 +60,8 @@
 #include "constants/union_room.h"
 #include "constants/weather.h"
 #include "wild_encounter.h"
-#include "ev_caps.h"
 
-#define FRIENDSHIP_EVO_THRESHOLD ((P_FRIENDSHIP_EVO_THRESHOLD >= GEN_9) ? 160 : 220)
+#define FRIENDSHIP_EVO_THRESHOLD ((P_FRIENDSHIP_EVO_THRESHOLD >= GEN_8) ? 160 : 220)
 
 struct SpeciesItem
 {
@@ -686,7 +685,7 @@ const struct NatureInfo gNaturesInfo[NUM_NATURES] =
 #elif P_LVL_UP_LEARNSETS >= GEN_8
 #include "data/pokemon/level_up_learnsets/gen_8.h" // Sword/Shield
 #elif P_LVL_UP_LEARNSETS >= GEN_7
-#include "data/pokemon/level_up_learnsets/gen_7.h" // Ultra Sun/ Ultra Moon
+#include "data/pokemon/level_up_learnsets/gen_7.h" // Ultra Sun/Ultra Moon
 #elif P_LVL_UP_LEARNSETS >= GEN_6
 #include "data/pokemon/level_up_learnsets/gen_6.h" // Omega Ruby/Alpha Sapphire
 #elif P_LVL_UP_LEARNSETS >= GEN_5
@@ -1023,7 +1022,7 @@ STATIC_ASSERT(NUM_SPECIES < (1 << 11), PokemonSubstruct0_species_TooSmall);
 STATIC_ASSERT(NUMBER_OF_MON_TYPES + 1 <= (1 << 5), PokemonSubstruct0_teraType_TooSmall);
 STATIC_ASSERT(ITEMS_COUNT < (1 << 10), PokemonSubstruct0_heldItem_TooSmall);
 STATIC_ASSERT(MAX_LEVEL <= 100, PokemonSubstruct0_experience_PotentiallTooSmall); // Maximum of ~2 million exp.
-STATIC_ASSERT(LAST_BALL < (1 << 6), PokemonSubstruct0_pokeball_TooSmall);
+STATIC_ASSERT(POKEBALL_COUNT <= (1 << 6), PokemonSubstruct0_pokeball_TooSmall);
 STATIC_ASSERT(MOVES_COUNT_ALL < (1 << 11), PokemonSubstruct1_moves_TooSmall);
 STATIC_ASSERT(ARRAY_COUNT(sCompressedStatuses) <= (1 << 4), PokemonSubstruct3_compressedStatus_TooSmall);
 STATIC_ASSERT(MAX_LEVEL < (1 << 7), PokemonSubstruct3_metLevel_TooSmall);
@@ -1800,29 +1799,19 @@ void CalculateMonStats(struct Pokemon *mon)
     CALC_STAT(baseSpAttack, spAttackIV, spAttackEV, STAT_SPATK, MON_DATA_SPATK)
     CALC_STAT(baseSpDefense, spDefenseIV, spDefenseEV, STAT_SPDEF, MON_DATA_SPDEF)
 
-    if (species == SPECIES_SHEDINJA)
-    {
-        if (currentHP != 0 || oldMaxHP == 0)
-            currentHP = 1;
-        else
-            return;
-    }
-    else
-    {
-        if (currentHP == 0 && oldMaxHP == 0)
-            currentHP = newMaxHP;
-        else if (currentHP != 0)
-        {
-            if (newMaxHP > oldMaxHP)
-                currentHP += newMaxHP - oldMaxHP;
-            if (currentHP <= 0)
-                currentHP = 1;
-            if (currentHP > newMaxHP)
-                currentHP = newMaxHP;
-        }
-        else
-            return;
-    }
+    // Since a pokemon's maxHP data could either not have
+    // been initialized at this point or this pokemon is
+    // just fainted, the check for oldMaxHP is important.
+    if (currentHP == 0 && oldMaxHP != 0)
+        return;
+
+    // Only add to currentHP if newMaxHP went up.
+    if (newMaxHP > oldMaxHP)
+        currentHP += newMaxHP - oldMaxHP;
+
+    // Ensure currentHP does not surpass newMaxHP.
+    if (currentHP > newMaxHP)
+        currentHP = newMaxHP;
 
     SetMonData(mon, MON_DATA_HP, &currentHP);
 }
@@ -3378,6 +3367,20 @@ u8 CalculatePartyCount(struct Pokemon *party)
     return partyCount;
 }
 
+u8 CalculatePartyCountOfSide(u32 battler, struct Pokemon *party)
+{
+    s32 partyCount, partySize;
+    GetAIPartyIndexes(battler, &partyCount, &partySize);
+
+    while (partyCount < partySize
+        && GetMonData(&party[partyCount], MON_DATA_SPECIES, NULL) != SPECIES_NONE)
+    {
+        partyCount++;
+    }
+
+    return partyCount;
+}
+
 u8 CalculatePlayerPartyCount(void)
 {
     gPlayerPartyCount = CalculatePartyCount(gPlayerParty);
@@ -3388,6 +3391,11 @@ u8 CalculateEnemyPartyCount(void)
 {
     gEnemyPartyCount = CalculatePartyCount(gEnemyParty);
     return gEnemyPartyCount;
+}
+
+u8 CalculateEnemyPartyCountInSide(u32 battler)
+{
+    return CalculatePartyCountOfSide(battler, gEnemyParty);
 }
 
 u8 GetMonsStateToDoubles(void)
@@ -3685,10 +3693,12 @@ void PokemonToBattleMon(struct Pokemon *src, struct BattlePokemon *dst)
     dst->status2 = 0;
 }
 
-void CopyPlayerPartyMonToBattleData(u8 battlerId, u8 partyIndex)
+void CopyPartyMonToBattleData(u32 battlerId, u32 partyIndex)
 {
-    PokemonToBattleMon(&gPlayerParty[partyIndex], &gBattleMons[battlerId]);
-    gBattleStruct->hpOnSwitchout[GetBattlerSide(battlerId)] = gBattleMons[battlerId].hp;
+    u32 side = GetBattlerSide(battlerId);
+    struct Pokemon *party = GetSideParty(side);
+    PokemonToBattleMon(&party[partyIndex], &gBattleMons[battlerId]);
+    gBattleStruct->hpOnSwitchout[side] = gBattleMons[battlerId].hp;
     UpdateSentPokesToOpponentValue(battlerId);
     ClearTemporarySpeciesSpriteData(battlerId, FALSE);
 }
@@ -3889,11 +3899,11 @@ bool8 PokemonUseItemEffects(struct Pokemon *mon, u16 item, u8 partyIndex, u8 mov
 
                             // Ensure the increase does not exceed the max EV per stat (252)
                             evCap = (itemEffect[10] & ITEM10_IS_VITAMIN) ? EV_ITEM_RAISE_LIMIT : MAX_PER_STAT_EVS;
-                            
+
                             // Check if the per-stat limit is reached
                             if (dataSigned >= evCap)
                                 return TRUE;  // Prevents item use if the per-stat cap is already reached
-                            
+
                             if (dataSigned + evChange > evCap)
                                 temp2 = evCap - dataSigned;
                             else
@@ -4078,11 +4088,11 @@ bool8 PokemonUseItemEffects(struct Pokemon *mon, u16 item, u8 partyIndex, u8 mov
 
                             // Ensure the increase does not exceed the max EV per stat (252)
                             evCap = (itemEffect[10] & ITEM10_IS_VITAMIN) ? EV_ITEM_RAISE_LIMIT : MAX_PER_STAT_EVS;
-                            
+
                             // Check if the per-stat limit is reached
                             if (dataSigned >= evCap)
                                 return TRUE;  // Prevents item use if the per-stat cap is already reached
-                            
+
                             if (dataSigned + evChange > evCap)
                                 temp2 = evCap - dataSigned;
                             else
@@ -5820,18 +5830,24 @@ const u32 *GetMonSpritePalFromSpecies(u16 species, bool32 isShiny, bool32 isFema
 
     if (isShiny)
     {
+    #if P_GENDER_DIFFERENCES
         if (gSpeciesInfo[species].shinyPaletteFemale != NULL && isFemale)
             return gSpeciesInfo[species].shinyPaletteFemale;
-        else if (gSpeciesInfo[species].shinyPalette != NULL)
+        else
+    #endif
+        if (gSpeciesInfo[species].shinyPalette != NULL)
             return gSpeciesInfo[species].shinyPalette;
         else
             return gSpeciesInfo[SPECIES_NONE].shinyPalette;
     }
     else
     {
+    #if P_GENDER_DIFFERENCES
         if (gSpeciesInfo[species].paletteFemale != NULL && isFemale)
             return gSpeciesInfo[species].paletteFemale;
-        else if (gSpeciesInfo[species].palette != NULL)
+        else
+    #endif
+        if (gSpeciesInfo[species].palette != NULL)
             return gSpeciesInfo[species].palette;
         else
             return gSpeciesInfo[SPECIES_NONE].palette;
@@ -5934,7 +5950,7 @@ void SetMonPreventsSwitchingString(void)
 
     PREPARE_MON_NICK_WITH_PREFIX_BUFFER(gBattleTextBuff2, gBattlerInMenuId, GetPartyIdFromBattlePartyId(gBattlerPartyIndexes[gBattlerInMenuId]))
 
-    BattleStringExpandPlaceholders(gText_PkmnsXPreventsSwitching, gStringVar4);
+    BattleStringExpandPlaceholders(gText_PkmnsXPreventsSwitching, gStringVar4, sizeof(gStringVar4));
 }
 
 static s32 GetWildMonTableIdInAlteringCave(u16 species)
@@ -6685,12 +6701,14 @@ void TrySpecialOverworldEvo(void)
 
 bool32 SpeciesHasGenderDifferences(u16 species)
 {
+#if P_GENDER_DIFFERENCES
     if (gSpeciesInfo[species].frontPicFemale != NULL
-     || gSpeciesInfo[species].paletteFemale != NULL
      || gSpeciesInfo[species].backPicFemale != NULL
+     || gSpeciesInfo[species].paletteFemale != NULL
      || gSpeciesInfo[species].shinyPaletteFemale != NULL
      || gSpeciesInfo[species].iconSpriteFemale != NULL)
         return TRUE;
+#endif
 
     return FALSE;
 }
@@ -6942,193 +6960,10 @@ void UpdateDaysPassedSinceFormChange(u16 days)
     }
 }
 
-static inline u32 CalculateHiddenPowerType(struct Pokemon *mon)
-{
-    u32 typehp;
-    u32 type;
-    u8 typeBits  = ((GetMonData(mon, MON_DATA_HP_IV) & 1) << 0)
-                 | ((GetMonData(mon, MON_DATA_ATK_IV) & 1) << 1)
-                 | ((GetMonData(mon, MON_DATA_DEF_IV) & 1) << 2)
-                 | ((GetMonData(mon, MON_DATA_SPEED_IV) & 1) << 3)
-                 | ((GetMonData(mon, MON_DATA_SPATK_IV) & 1) << 4)
-                 | ((GetMonData(mon, MON_DATA_SPDEF_IV) & 1) << 5);
-
-    type = (15 * typeBits) / 63 + 2;
-    if (type >= TYPE_MYSTERY)
-        type++;
-    type |= 0xC0;
-    typehp = type & 0x3F;
-    return typehp;
-}
-
 u32 CheckDynamicMoveType(struct Pokemon *mon, u32 move, u32 battler)
 {
-    u32 type = gMovesInfo[move].type;
-    u32 species = GetMonData(mon, MON_DATA_SPECIES);
-    u32 heldItem = GetMonData(mon, MON_DATA_HELD_ITEM, 0);
-    u32 heldItemEffect = ItemId_GetHoldEffect(heldItem);
-    u32 ability = GetMonAbility(mon);
-    u32 type1 = gSpeciesInfo[species].types[0];
-    u32 type2 = gSpeciesInfo[species].types[1];
-    u32 effect = gMovesInfo[move].effect;
-
-    if (effect == EFFECT_IVY_CUDGEL
-     && (species == SPECIES_OGERPON_WELLSPRING_MASK || species == SPECIES_OGERPON_WELLSPRING_MASK_TERA
-     || species == SPECIES_OGERPON_HEARTHFLAME_MASK || species == SPECIES_OGERPON_HEARTHFLAME_MASK_TERA
-     || species == SPECIES_OGERPON_CORNERSTONE_MASK || species == SPECIES_OGERPON_CORNERSTONE_MASK_TERA))
-    {
-        type = type2;
-    }
-    else if (move == MOVE_STRUGGLE)
-    {
-        return TYPE_NORMAL;
-    }
-    else if (effect == EFFECT_TERA_BLAST && GetActiveGimmick(battler) == GIMMICK_TERA && gBattleMons[battler].species == species)
-    {
-        return GetMonData(mon, MON_DATA_TERA_TYPE);
-    }
-    else if (effect == EFFECT_TERA_STARSTORM && species == SPECIES_TERAPAGOS_STELLAR)
-    {
-        return TYPE_STELLAR;
-    }
-    else if (move == MOVE_HIDDEN_POWER)
-    {
-        return CalculateHiddenPowerType(mon);
-    }
-    else if (effect == EFFECT_AURA_WHEEL && species == SPECIES_MORPEKO_HANGRY)
-    {
-        type = TYPE_DARK;
-    }
-    else if (effect == EFFECT_CHANGE_TYPE_ON_ITEM)
-    {
-        if (heldItemEffect == gMovesInfo[move].argument)
-            return ItemId_GetSecondaryId(heldItem);
-        else
-            return TYPE_NORMAL;
-    }
-    else if (effect == EFFECT_NATURAL_GIFT)
-    {
-        if (ItemId_GetPocket(heldItem) == POCKET_BERRIES)
-            return gNaturalGiftTable[ITEM_TO_BERRY(heldItem)].type;
-        else
-            return TYPE_NORMAL;
-    }
-    else if (effect == EFFECT_RAGING_BULL
-          && (species == SPECIES_TAUROS_PALDEAN_COMBAT_BREED
-          || species == SPECIES_TAUROS_PALDEAN_BLAZE_BREED
-          || species == SPECIES_TAUROS_PALDEAN_AQUA_BREED))
-    {
-        return type2;
-    }
-    else if (effect == EFFECT_REVELATION_DANCE)
-    {
-        if (gBattleMons[battler].species != species && type1 != TYPE_MYSTERY)
-            type = type1;
-        else if (gBattleMons[battler].species != species && type2 != TYPE_MYSTERY)
-            type = type2;
-        else if (GetBattlerTeraType(battler) != TYPE_STELLAR && (GetActiveGimmick(battler) == GIMMICK_TERA || IsGimmickSelected(battler, GIMMICK_TERA)))
-            type = GetMonData(mon, MON_DATA_TERA_TYPE);
-        else if (gBattleMons[battler].types[0] != TYPE_MYSTERY)
-            type = gBattleMons[battler].types[0];
-        else if (gBattleMons[battler].types[1] != TYPE_MYSTERY)
-            type = gBattleMons[battler].types[1];
-        else if (gBattleMons[battler].types[2] != TYPE_MYSTERY)
-            type = gBattleMons[battler].types[2];
-    }
-    else if (effect == EFFECT_TERRAIN_PULSE
-          && ((IsMonGrounded(heldItemEffect, ability, type1, type2) && gBattleMons[battler].species != species)
-           || (IsBattlerTerrainAffected(battler, STATUS_FIELD_TERRAIN_ANY) && gBattleMons[battler].species == species)))
-    {
-        if (gMain.inBattle)
-        {
-            if (gFieldStatuses & STATUS_FIELD_ELECTRIC_TERRAIN)
-                return TYPE_ELECTRIC;
-            else if (gFieldStatuses & STATUS_FIELD_GRASSY_TERRAIN)
-                return TYPE_GRASS;
-            else if (gFieldStatuses & STATUS_FIELD_MISTY_TERRAIN)
-                return TYPE_FAIRY;
-            else if (gFieldStatuses & STATUS_FIELD_PSYCHIC_TERRAIN)
-                return TYPE_PSYCHIC;
-            else //failsafe
-                type = TYPE_NORMAL;
-        }
-        else
-        {
-            switch (gWeatherPtr->currWeather)
-            {
-            case WEATHER_RAIN_THUNDERSTORM:
-                if (B_THUNDERSTORM_TERRAIN)
-                    return TYPE_ELECTRIC;
-                break;
-            case WEATHER_FOG_HORIZONTAL:
-            case WEATHER_FOG_DIAGONAL:
-                if (B_OVERWORLD_FOG >= GEN_8)
-                    return TYPE_FAIRY;
-                break;
-            }
-            return TYPE_NORMAL;
-        }
-    }
-
-    if (effect == EFFECT_WEATHER_BALL)
-    {
-        if (gMain.inBattle && WEATHER_HAS_EFFECT)
-        {
-            if (gBattleWeather & B_WEATHER_RAIN && heldItemEffect != HOLD_EFFECT_UTILITY_UMBRELLA)
-                return TYPE_WATER;
-            else if (gBattleWeather & B_WEATHER_SANDSTORM)
-                return TYPE_ROCK;
-            else if (gBattleWeather & B_WEATHER_SUN && heldItemEffect != HOLD_EFFECT_UTILITY_UMBRELLA)
-                return TYPE_FIRE;
-            else if (gBattleWeather & (B_WEATHER_SNOW | B_WEATHER_HAIL))
-                return TYPE_ICE;
-            else
-                return TYPE_NORMAL;
-        }
-        else
-        {
-            switch (gWeatherPtr->currWeather)
-            {
-            case WEATHER_DROUGHT:
-                if (heldItem != ITEM_UTILITY_UMBRELLA)
-                    return TYPE_FIRE;
-                break;
-            case WEATHER_RAIN:
-            case WEATHER_RAIN_THUNDERSTORM:
-                if (heldItem != ITEM_UTILITY_UMBRELLA)
-                    return TYPE_WATER;
-                break;
-            case WEATHER_SNOW:
-                return TYPE_ICE;
-                break;
-            case WEATHER_SANDSTORM:
-                return TYPE_ROCK;
-                break;
-            }
-            return TYPE_NORMAL;
-        }
-    }
-
-    if (ability == ABILITY_NORMALIZE && gMovesInfo[move].type != TYPE_NORMAL && GetActiveGimmick(battler) != GIMMICK_Z_MOVE)
-        type = TYPE_NORMAL;
-
-    if ((gFieldStatuses & STATUS_FIELD_ION_DELUGE && type == TYPE_NORMAL) || gStatuses4[battler] & STATUS4_ELECTRIFIED)
-        type = TYPE_ELECTRIC;
-
-    if (gMovesInfo[move].type == TYPE_NORMAL && gMovesInfo[move].category != DAMAGE_CATEGORY_STATUS)
-    {
-        switch (ability)
-        {
-        case ABILITY_PIXILATE: return TYPE_FAIRY;
-        case ABILITY_REFRIGERATE: return TYPE_ICE;
-        case ABILITY_AERILATE: return TYPE_FLYING;
-        case ABILITY_GALVANIZE: return TYPE_ELECTRIC;
-        default: break;
-        }
-    }
-
-    if (ability == ABILITY_LIQUID_VOICE && gMovesInfo[move].soundMove == TRUE)
-        return TYPE_WATER;
-
-    return type;
+    u32 moveType = GetDynamicMoveType(mon, move, battler, NULL);
+    if (moveType != TYPE_NONE)
+        return moveType;
+    return gMovesInfo[move].type;
 }

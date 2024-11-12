@@ -77,7 +77,7 @@ SINGLE_BATTLE_TEST("Mind Blown causes the user & the target to faint when below 
     } SCENE {
         ANIMATION(ANIM_TYPE_MOVE, MOVE_MIND_BLOWN, player);
         HP_BAR(opponent, hp: 0);
-        MESSAGE("Foe Wobbuffet fainted!");
+        MESSAGE("The opposing Wobbuffet fainted!");
         HP_BAR(player, hp: 0);
         MESSAGE("Wobbuffet fainted!");
     }
@@ -98,9 +98,8 @@ DOUBLE_BATTLE_TEST("Mind Blown causes everyone to faint in a double battle")
         HP_BAR(opponentLeft, hp: 0);
         HP_BAR(playerRight, hp: 0);
         HP_BAR(opponentRight, hp: 0);
-        MESSAGE("Foe Abra fainted!");
-        MESSAGE("Wynaut fainted!");
-        MESSAGE("Foe Kadabra fainted!");
+        MESSAGE("The opposing Abra fainted!");
+        MESSAGE("The opposing Kadabra fainted!");
         HP_BAR(playerLeft, hp: 0);
         MESSAGE("Wobbuffet fainted!");
     }
@@ -133,7 +132,7 @@ SINGLE_BATTLE_TEST("Mind Blown is blocked by Damp")
             HP_BAR(player, damage: 200);
         }
         ABILITY_POPUP(opponent, ABILITY_DAMP);
-        MESSAGE("Foe Golduck's Damp prevents Wobbuffet from using Mind Blown!");
+        MESSAGE("The opposing Golduck's Damp prevents Wobbuffet from using Mind Blown!");
     }
 }
 
