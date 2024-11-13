@@ -6639,14 +6639,14 @@ BattleScript_FutureAttackEnd::
 	moveendcase MOVEEND_RAGE
 	moveendcase MOVEEND_ABILITIES
 	moveendfromto MOVEEND_ITEM_EFFECTS_ALL, MOVEEND_UPDATE_LAST_MOVES
-	setbyte gMoveResultFlags, 0
+	setmoveresultflags 0
 	end2
 BattleScript_FutureAttackMiss::
 	pause B_WAIT_TIME_SHORT
-	sethword gMoveResultFlags, MOVE_RESULT_FAILED
+	setmoveresultflags MOVE_RESULT_FAILED
 	resultmessage
 	waitmessage B_WAIT_TIME_LONG
-	sethword gMoveResultFlags, 0
+	setmoveresultflags 0
 	end2
 
 BattleScript_NoMovesLeft::
@@ -7307,7 +7307,7 @@ BattleScript_PowderMoveNoEffectPrint:
 BattleScript_PowderMoveNoEffectWaitMsg:
 	waitmessage B_WAIT_TIME_LONG
 	cancelmultiturnmoves BS_ATTACKER
-	sethword gMoveResultFlags, MOVE_RESULT_FAILED
+	setmoveresultflags MOVE_RESULT_FAILED
 	goto BattleScript_MoveEnd
 
 BattleScript_MoveUsedFlinched::

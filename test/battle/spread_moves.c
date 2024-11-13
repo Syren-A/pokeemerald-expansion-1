@@ -59,7 +59,6 @@ DOUBLE_BATTLE_TEST("Spread Moves: t6") // Fixed issue #1961
 
 DOUBLE_BATTLE_TEST("Spread Moves: No damage will be dealt to a mon with an invulnerable position")
 {
-    KNOWN_FAILING; // TODO: Fix Move Result Flags
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET);
         PLAYER(SPECIES_WYNAUT);

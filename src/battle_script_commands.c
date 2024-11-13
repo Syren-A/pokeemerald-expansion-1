@@ -1781,10 +1781,8 @@ static void AccuracyCheck(bool32 recalcDragonDarts, const u8 *nextInstr, const u
                 break;
             }
 
-            if (gBattlerAttacker == battlerDef
-             || (!calcSpreadMove && battlerDef != gBattlerTarget)
-             || !IsBattlerAlive(battlerDef)
-             || (battlerDef == BATTLE_PARTNER(gBattlerAttacker) && (moveTarget == MOVE_TARGET_BOTH))
+            if ((!calcSpreadMove && battlerDef != gBattlerTarget)
+             || IsBattlerInvalidForSpreadMove(gBattlerAttacker, battlerDef, moveTarget)
              || (gBattleStruct->noResultString[battlerDef] && gBattleStruct->noResultString[battlerDef] != DO_ACCURACY_CHECK))
                 continue;
 
@@ -2115,11 +2113,9 @@ static void Cmd_critcalc(void)
         if (!calcSpreadMoveDamage && battlerDef != gBattlerTarget)
             continue;
 
-        if (!IsBattlerAlive(battlerDef)
-          || battlerDef == gBattlerAttacker
-          || (battlerDef == BATTLE_PARTNER(gBattlerAttacker) && (moveTarget == MOVE_TARGET_BOTH))
-          || gBattleStruct->noResultString[battlerDef]
-          || gBattleStruct->moveResultFlags[battlerDef] & MOVE_RESULT_NO_EFFECT)
+        if (IsBattlerInvalidForSpreadMove(gBattlerAttacker, battlerDef, moveTarget)
+         || gBattleStruct->noResultString[battlerDef]
+         || gBattleStruct->moveResultFlags[battlerDef] & MOVE_RESULT_NO_EFFECT)
             continue;
 
         if (B_CRIT_CHANCE == GEN_1)
@@ -2189,13 +2185,7 @@ static void Cmd_damagecalc(void)
         u32 battlerDef;
         for (battlerDef = 0; battlerDef < gBattlersCount; battlerDef++)
         {
-            if (gBattleStruct->moveResultFlags[battlerDef] & MOVE_RESULT_NO_EFFECT)
-            {
-                DebugPrintf("damagecalc: [0] battlerDef %d", battlerDef);
-            }
-            if (!IsBattlerAlive(battlerDef)
-             || battlerDef == gBattlerAttacker
-             || (battlerDef == BATTLE_PARTNER(gBattlerAttacker) && (moveTarget == MOVE_TARGET_BOTH))
+            if (IsBattlerInvalidForSpreadMove(gBattlerAttacker, battlerDef, moveTarget)
              || gBattleStruct->noResultString[battlerDef]
              || gBattleStruct->moveResultFlags[battlerDef] & MOVE_RESULT_NO_EFFECT)
                 continue;
@@ -2247,9 +2237,7 @@ static void Cmd_adjustdamage(void)
         if (!calcSpreadMoveDamage && battlerDef != gBattlerTarget)
             continue;
 
-		if (!IsBattlerAlive(battlerDef)
-         || battlerDef == gBattlerAttacker
-		 || (battlerDef == BATTLE_PARTNER(gBattlerAttacker) && !(moveTarget & MOVE_TARGET_FOES_AND_ALLY))
+		if (IsBattlerInvalidForSpreadMove(gBattlerAttacker, battlerDef, moveTarget)
 		 || gBattleStruct->noResultString[battlerDef])
 			continue;
 
@@ -2472,10 +2460,6 @@ static void DoublesHPBarReduction(void)
 
     for (u32 battlerDef = 0; battlerDef < gBattlersCount; battlerDef++)
     {
-        if (gBattleStruct->moveResultFlags[battlerDef] & MOVE_RESULT_NO_EFFECT)
-        {
-            DebugPrintf("healthbarupdate: battlerDef %d", battlerDef);
-        }
         if (gBattleStruct->moveResultFlags[battlerDef] & MOVE_RESULT_NO_EFFECT
          || gBattleStruct->calculatedDamage[battlerDef] == 0
          || gBattleStruct->noResultString[battlerDef]

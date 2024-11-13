@@ -314,6 +314,7 @@ bool8 IsMonBannedFromSkyBattles(u16 species);
 void RemoveBattlerType(u32 battler, u8 type);
 u32 GetMoveType(u32 move);
 bool32 ProcessPreAttackAnimationFuncs(void);
+bool32 IsBattlerInvalidForSpreadMove(u32 battlerAtk, u32 battlerDef, u32 moveTarget);
 void ClearDamageCalcResults(void);
 
 #endif // GUARD_BATTLE_UTIL_H

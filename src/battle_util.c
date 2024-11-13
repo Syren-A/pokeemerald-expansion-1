@@ -12035,6 +12035,13 @@ bool32 ProcessPreAttackAnimationFuncs(void)
 	return FALSE;
 }
 
+bool32 IsBattlerInvalidForSpreadMove(u32 battlerAtk, u32 battlerDef, u32 moveTarget)
+{
+    return battlerDef == battlerAtk
+        || !IsBattlerAlive(battlerDef)
+        || (battlerDef == BATTLE_PARTNER(battlerAtk) && (moveTarget == MOVE_TARGET_BOTH));
+}
+
 void ClearDamageCalcResults(void)
 {
     for (u32 battler = 0; battler < MAX_BATTLERS_COUNT; battler++)
