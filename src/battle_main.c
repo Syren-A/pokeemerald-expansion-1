@@ -3201,7 +3201,7 @@ void SwitchInClearSetData(u32 battler)
         gDisableStructs[battler].substituteHP = disableStructCopy.substituteHP;
     }
 
-    gMoveResultFlags = 0;
+    gBattleStruct->moveResultFlags[battler] = 0;
     gDisableStructs[battler].isFirstTurn = 2;
     gDisableStructs[battler].truantSwitchInHack = disableStructCopy.truantSwitchInHack;
     gLastMoves[battler] = MOVE_NONE;
@@ -3945,7 +3945,6 @@ static void TryDoEventsBeforeFirstTurn(void)
         gBattleScripting.moveendState = 0;
         gBattleStruct->faintedActionsState = 0;
         gBattleStruct->turnCountersTracker = 0;
-        gMoveResultFlags = 0;
 
         memset(gQueuedStatBoosts, 0, sizeof(gQueuedStatBoosts));
         SetShellSideArmCategory();
@@ -3984,8 +3983,6 @@ static void HandleEndTurn_ContinueBattle(void)
         gBattleStruct->wishPerishSongState = 0;
         gBattleStruct->wishPerishSongBattlerId = 0;
         gBattleStruct->turnCountersTracker = 0;
-        ClearDamageCalcResults();
-        gMoveResultFlags = 0;
     }
 }
 
@@ -4018,7 +4015,6 @@ void BattleTurnPassed(void)
     gBattleScripting.animTargetsHit = 0;
     gBattleScripting.moveendState = 0;
     gBattleMoveDamage = 0;
-    gMoveResultFlags = 0;
 
     for (i = 0; i < 5; i++)
         gBattleCommunication[i] = 0;
@@ -5159,9 +5155,6 @@ static void TurnValuesCleanUp(bool8 var0)
             gBattleStruct->commandingDondozo &= ~(1u << i);
 
         gSpecialStatuses[i].parentalBondState = PARENTAL_BOND_OFF;
-        gBattleStruct->moveResultFlags[i] = 0;
-        gBattleStruct->calculatedDamage[i] = 0;
-
     }
 
     gSideStatuses[B_SIDE_PLAYER] &= ~(SIDE_STATUS_QUICK_GUARD | SIDE_STATUS_WIDE_GUARD | SIDE_STATUS_CRAFTY_SHIELD | SIDE_STATUS_MAT_BLOCK);

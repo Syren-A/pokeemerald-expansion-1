@@ -528,7 +528,7 @@ void BS_SetMaxMoveEffect(void)
     u8 maxEffect = gMovesInfo[gCurrentMove].argument;
 
     // Don't continue if the move didn't land.
-    if (gMoveResultFlags & MOVE_RESULT_NO_EFFECT)
+    if (gBattleStruct->moveResultFlags[gBattlerTarget] & MOVE_RESULT_NO_EFFECT)
     {
         gBattlescriptCurrInstr = cmd->nextInstr;
         return;

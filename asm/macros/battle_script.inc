@@ -1761,6 +1761,16 @@
 	callnative BS_RemoveTerrain
 	.endm
 
+	.macro setmoveresultflags flags:req
+	callnative BS_SetMoveResultFlags
+	.2byte \flags
+	.endm
+
+	.macro clearmoveresultflags flags:req
+	callnative BS_ClearMoveResultFlags
+	.2byte \flags
+	.endm
+
 @ various command changed to more readable macros
 	.macro cancelmultiturnmoves battler:req
 	various \battler, VARIOUS_CANCEL_MULTI_TURN_MOVES

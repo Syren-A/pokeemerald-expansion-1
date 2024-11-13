@@ -1213,5 +1213,10 @@ static inline bool32 IsDoubleSpreadMove(void)
         && IsSpreadMove(GetBattlerMoveTargetType(gBattlerAttacker, gCurrentMove));
 }
 
+static inline bool32 MoveResultHasEffect(u32 battler)
+{
+    return !(gBattleStruct->moveResultFlags[battler] & MOVE_RESULT_NO_EFFECT);
+}
+
 #endif // GUARD_BATTLE_H
 
