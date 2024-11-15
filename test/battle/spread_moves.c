@@ -73,6 +73,20 @@ DOUBLE_BATTLE_TEST("Spread Moves: No damage will be dealt to a mon with an invul
     }
 }
 
+DOUBLE_BATTLE_TEST("[1.1] Spread Moves: No damage will be dealt to a mon with an invulnerable position")
+{
+    GIVEN {
+        PLAYER(SPECIES_WOBBUFFET);
+        PLAYER(SPECIES_WYNAUT);
+        OPPONENT(SPECIES_ZAPDOS);
+        OPPONENT(SPECIES_WOBBUFFET);
+    } WHEN {
+        TURN { MOVE(playerLeft, MOVE_BUBBLE_BEAM, target: opponentLeft); MOVE(opponentLeft, MOVE_SURF); }
+    } SCENE {
+        ANIMATION(ANIM_TYPE_MOVE, MOVE_SURF, opponentLeft);
+    }
+}
+
 DOUBLE_BATTLE_TEST("Spread Moves: A spread move attack will activate both resist berries")
 {
     s16 opponentLeftDmg[2];

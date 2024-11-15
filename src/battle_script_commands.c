@@ -1324,11 +1324,11 @@ static void Cmd_attackcanceler(void)
             return;
         case DISOBEYS_FALL_ASLEEP:
             gBattlescriptCurrInstr = BattleScript_IgnoresAndFallsAsleep;
-            gBattleStruct->moveResultFlags[gBattlerTarget]  |= MOVE_RESULT_MISSED;
+            gBattleStruct->moveResultFlags[gBattlerTarget] |= MOVE_RESULT_MISSED;
             return;
         case DISOBEYS_WHILE_ASLEEP:
             gBattlescriptCurrInstr = BattleScript_IgnoresWhileAsleep;
-            gBattleStruct->moveResultFlags[gBattlerTarget]  |= MOVE_RESULT_MISSED;
+            gBattleStruct->moveResultFlags[gBattlerTarget] |= MOVE_RESULT_MISSED;
             return;
         case DISOBEYS_RANDOM_MOVE:
             gCalledMove = gBattleMons[gBattlerAttacker].moves[gCurrMovePos];
@@ -1453,7 +1453,7 @@ static void Cmd_attackcanceler(void)
         if (IsMoveMakingContact(gCurrentMove, gBattlerAttacker))
             gProtectStructs[gBattlerAttacker].touchedProtectLike = TRUE;
         CancelMultiTurnMoves(gBattlerAttacker);
-        gBattleStruct->moveResultFlags[gBattlerTarget]  |= MOVE_RESULT_MISSED;
+        gBattleStruct->moveResultFlags[gBattlerTarget] |= MOVE_RESULT_MISSED;
         gLastLandedMoves[gBattlerTarget] = 0;
         gLastHitByType[gBattlerTarget] = 0;
 
@@ -1502,7 +1502,7 @@ static void Cmd_unused5(void)
 
     if (IsBattlerProtected(gBattlerAttacker, gBattlerTarget, gCurrentMove))
     {
-        gBattleStruct->moveResultFlags[gBattlerTarget]  |= MOVE_RESULT_MISSED;
+        gBattleStruct->moveResultFlags[gBattlerTarget] |= MOVE_RESULT_MISSED;
         JumpIfMoveFailed(sizeof(*cmd), MOVE_NONE);
         gBattleCommunication[MISS_TYPE] = B_MSG_PROTECTED;
     }
@@ -1539,24 +1539,24 @@ static bool32 AccuracyCalcHelper(u32 move, u32 battler)
     }
     // If the attacker has the ability No Guard and they aren't targeting a Pokemon involved in a Sky Drop with the move Sky Drop, move hits.
     else if (GetBattlerAbility(gBattlerAttacker) == ABILITY_NO_GUARD
-          && !(gStatuses3[gBattlerTarget] & STATUS3_COMMANDER)
-          && (gMovesInfo[move].effect != EFFECT_SKY_DROP || gBattleStruct->skyDropTargets[gBattlerTarget] == 0xFF))
+          && !(gStatuses3[battler] & STATUS3_COMMANDER)
+          && (gMovesInfo[move].effect != EFFECT_SKY_DROP || gBattleStruct->skyDropTargets[battler] == 0xFF))
     {
         // if (!JumpIfMoveFailed(7, move))
         //     RecordAbilityBattle(gBattlerAttacker, ABILITY_NO_GUARD);
         return TRUE;
     }
     // If the target has the ability No Guard and they aren't involved in a Sky Drop or the current move isn't Sky Drop, move hits.
-    else if (GetBattlerAbility(gBattlerTarget) == ABILITY_NO_GUARD
-          && (gMovesInfo[move].effect != EFFECT_SKY_DROP || gBattleStruct->skyDropTargets[gBattlerTarget] == 0xFF))
+    else if (GetBattlerAbility(battler) == ABILITY_NO_GUARD
+          && (gMovesInfo[move].effect != EFFECT_SKY_DROP || gBattleStruct->skyDropTargets[battler] == 0xFF))
     {
         // if (!JumpIfMoveFailed(7, move))
         //     RecordAbilityBattle(battler, ABILITY_NO_GUARD);
         return TRUE;
     }
     // If the target is under the effects of Telekinesis, and the move isn't a OH-KO move, move hits.
-    else if (gStatuses3[gBattlerTarget] & STATUS3_TELEKINESIS
-          && !(gStatuses3[gBattlerTarget] & STATUS3_SEMI_INVULNERABLE)
+    else if (gStatuses3[battler] & STATUS3_TELEKINESIS
+          && !(gStatuses3[battler] & STATUS3_SEMI_INVULNERABLE)
           && gMovesInfo[move].effect != EFFECT_OHKO)
     {
         // JumpIfMoveFailed(7, move);
@@ -1569,11 +1569,11 @@ static bool32 AccuracyCalcHelper(u32 move, u32 battler)
         return TRUE;
     }
 
-    if ((gStatuses3[gBattlerTarget] & STATUS3_COMMANDER)
-     || (gStatuses3[gBattlerTarget] & STATUS3_PHANTOM_FORCE)
-     || ((gStatuses3[gBattlerTarget] & STATUS3_ON_AIR) && !(gMovesInfo[move].damagesAirborne || gMovesInfo[move].damagesAirborneDoubleDamage))
-     || ((gStatuses3[gBattlerTarget] & STATUS3_UNDERGROUND) && !gMovesInfo[move].damagesUnderground)
-     || ((gStatuses3[gBattlerTarget] & STATUS3_UNDERWATER) && !gMovesInfo[move].damagesUnderwater))
+    if ((gStatuses3[battler] & STATUS3_COMMANDER)
+     || (gStatuses3[battler] & STATUS3_PHANTOM_FORCE)
+     || ((gStatuses3[battler] & STATUS3_ON_AIR) && !(gMovesInfo[move].damagesAirborne || gMovesInfo[move].damagesAirborneDoubleDamage))
+     || ((gStatuses3[battler] & STATUS3_UNDERGROUND) && !gMovesInfo[move].damagesUnderground)
+     || ((gStatuses3[battler] & STATUS3_UNDERWATER) && !gMovesInfo[move].damagesUnderwater))
     {
         gBattleStruct->moveResultFlags[battler] |= MOVE_RESULT_MISSED;
         // JumpIfMoveFailed(7, move);
@@ -10537,7 +10537,7 @@ static void Cmd_various(void)
         if (gSideStatuses[GetBattlerSide(battler)] & SIDE_STATUS_AURORA_VEIL
             || !(WEATHER_HAS_EFFECT && gBattleWeather & (B_WEATHER_HAIL | B_WEATHER_SNOW)))
         {
-            gBattleStruct->moveResultFlags[gBattlerTarget]  |= MOVE_RESULT_MISSED;
+            gBattleStruct->moveResultFlags[gBattlerTarget] |= MOVE_RESULT_MISSED;
             gBattleCommunication[MULTISTRING_CHOOSER] = 0;
         }
         else
@@ -11321,7 +11321,7 @@ static void Cmd_setprotectlike(void)
     {
         gDisableStructs[gBattlerAttacker].protectUses = 0;
         gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_PROTECT_FAILED;
-        gBattleStruct->moveResultFlags[gBattlerTarget]  |= MOVE_RESULT_MISSED;
+        gBattleStruct->moveResultFlags[gBattlerTarget] |= MOVE_RESULT_MISSED;
     }
 
     gBattlescriptCurrInstr = cmd->nextInstr;
@@ -11457,7 +11457,7 @@ static void Cmd_setfieldweather(void)
 
     if (!TryChangeBattleWeather(gBattlerAttacker, weather, FALSE))
     {
-        gBattleStruct->moveResultFlags[gBattlerTarget]  |= MOVE_RESULT_MISSED;
+        gBattleStruct->moveResultFlags[gBattlerTarget] |= MOVE_RESULT_MISSED;
         gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_WEATHER_FAILED;
         gBattlescriptCurrInstr = cmd->nextInstr;
         return;
@@ -11491,7 +11491,7 @@ static void Cmd_setreflect(void)
 
     if (gSideStatuses[GetBattlerSide(gBattlerAttacker)] & SIDE_STATUS_REFLECT)
     {
-        gBattleStruct->moveResultFlags[gBattlerTarget]  |= MOVE_RESULT_MISSED;
+        gBattleStruct->moveResultFlags[gBattlerTarget] |= MOVE_RESULT_MISSED;
         gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_SIDE_STATUS_FAILED;
     }
     else
@@ -11517,12 +11517,12 @@ static void Cmd_setseeded(void)
 
     if (gBattleStruct->moveResultFlags[gBattlerTarget] & MOVE_RESULT_NO_EFFECT || gStatuses3[gBattlerTarget] & STATUS3_LEECHSEED)
     {
-        gBattleStruct->moveResultFlags[gBattlerTarget]  |= MOVE_RESULT_MISSED;
+        gBattleStruct->moveResultFlags[gBattlerTarget] |= MOVE_RESULT_MISSED;
         gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_LEECH_SEED_MISS;
     }
     else if (IS_BATTLER_OF_TYPE(gBattlerTarget, TYPE_GRASS))
     {
-        gBattleStruct->moveResultFlags[gBattlerTarget]  |= MOVE_RESULT_MISSED;
+        gBattleStruct->moveResultFlags[gBattlerTarget] |= MOVE_RESULT_MISSED;
         gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_LEECH_SEED_FAIL;
     }
     else
@@ -11706,7 +11706,7 @@ static void Cmd_stockpile(void)
     case 0:
         if (gDisableStructs[gBattlerAttacker].stockpileCounter >= 3)
         {
-            gBattleStruct->moveResultFlags[gBattlerTarget]  |= MOVE_RESULT_MISSED;
+            gBattleStruct->moveResultFlags[gBattlerTarget] |= MOVE_RESULT_MISSED;
             gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_CANT_STOCKPILE;
         }
         else
@@ -12150,7 +12150,7 @@ static u32 ChangeStatBuffs(s8 statValue, u32 statId, u32 flags, const u8 *BS_ptr
         gBattleMons[battler].statStages[statId] = MAX_STAT_STAGE;
 
     if (gBattleCommunication[MULTISTRING_CHOOSER] == B_MSG_STAT_WONT_INCREASE && flags & STAT_CHANGE_ALLOW_PTR)
-        gBattleStruct->moveResultFlags[gBattlerTarget]  |= MOVE_RESULT_MISSED;
+        gBattleStruct->moveResultFlags[gBattlerTarget] |= MOVE_RESULT_MISSED;
 
     if (gBattleCommunication[MULTISTRING_CHOOSER] == B_MSG_STAT_WONT_INCREASE && !(flags & STAT_CHANGE_ALLOW_PTR))
         return STAT_CHANGE_DIDNT_WORK;
@@ -12574,7 +12574,7 @@ static void Cmd_setlightscreen(void)
 
     if (gSideStatuses[GetBattlerSide(gBattlerAttacker)] & SIDE_STATUS_LIGHTSCREEN)
     {
-        gBattleStruct->moveResultFlags[gBattlerTarget]  |= MOVE_RESULT_MISSED;
+        gBattleStruct->moveResultFlags[gBattlerTarget] |= MOVE_RESULT_MISSED;
         gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_SIDE_STATUS_FAILED;
     }
     else
@@ -12606,7 +12606,7 @@ static void Cmd_tryKO(void)
     // Dynamaxed Pokemon cannot be hit by OHKO moves.
     if ((GetActiveGimmick(gBattlerTarget) == GIMMICK_DYNAMAX))
     {
-        gBattleStruct->moveResultFlags[gBattlerTarget]  |= MOVE_RESULT_MISSED;
+        gBattleStruct->moveResultFlags[gBattlerTarget] |= MOVE_RESULT_MISSED;
         gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_KO_UNAFFECTED;
         gBattlescriptCurrInstr = cmd->failInstr;
         return;
@@ -12678,7 +12678,7 @@ static void Cmd_tryKO(void)
         }
         else
         {
-            gBattleStruct->moveResultFlags[gBattlerTarget]  |= MOVE_RESULT_MISSED;
+            gBattleStruct->moveResultFlags[gBattlerTarget] |= MOVE_RESULT_MISSED;
             if (gBattleMons[gBattlerAttacker].level >= gBattleMons[gBattlerTarget].level)
                 gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_KO_MISS;
             else
@@ -13839,7 +13839,7 @@ static void Cmd_setsafeguard(void)
 
     if (gSideStatuses[GetBattlerSide(gBattlerAttacker)] & SIDE_STATUS_SAFEGUARD)
     {
-        gBattleStruct->moveResultFlags[gBattlerTarget]  |= MOVE_RESULT_MISSED;
+        gBattleStruct->moveResultFlags[gBattlerTarget] |= MOVE_RESULT_MISSED;
         gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_SIDE_STATUS_FAILED;
     }
     else
