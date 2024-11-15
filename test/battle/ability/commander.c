@@ -187,9 +187,9 @@ DOUBLE_BATTLE_TEST("Commander Tatsugiri is not damaged by a double target move i
         ABILITY_POPUP(playerRight, ABILITY_COMMANDER);
         MESSAGE("Tatsugiri was swallowed by Dondozo and became Dondozo's commander!");
         HP_BAR(playerLeft);
-        MESSAGE("Dondozo fainted!");
-        NOT HP_BAR(playerRight);
         HP_BAR(opponentRight);
+        NOT HP_BAR(playerRight);
+        MESSAGE("Dondozo fainted!");
     }
 }
 

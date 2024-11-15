@@ -3675,51 +3675,51 @@ u8 AtkCanceller_UnableToUseMove(u32 moveType)
             gBattleStruct->atkCancellerTracker++;
             break;
 		case CANCELLER_MULTI_TARGET_MOVES:
-            if (!IsDoubleBattle())
+            u32 moveTarget = GetBattlerMoveTargetType(gBattlerAttacker, gCurrentMove);
+            if (!IsDoubleBattle() && !IsSpreadMove(moveTarget))
             {
                 gBattleStruct->atkCancellerTracker++;
                 break;
             }
 
-            u32 moveTarget = GetBattlerMoveTargetType(gBattlerAttacker, gCurrentMove);
-            if (IsSpreadMove(moveTarget))
+            for (u32 battlerDef = 0; battlerDef < gBattlersCount; battlerDef++)
             {
-                u32 battlerDef;
-                for (battlerDef = 0; battlerDef < gBattlersCount; battlerDef++)
+                if (gBattlerAttacker == battlerDef
+                 || !IsBattlerAlive(battlerDef)
+                 || (moveTarget == MOVE_TARGET_BOTH && gBattlerAttacker == BATTLE_PARTNER(battlerDef))
+                 || IsBattlerProtected(gBattlerAttacker, battlerDef, gCurrentMove)
+                 || gBattleMoveEffects[gMovesInfo[gCurrentMove].effect].twoTurnEffect)
                 {
-                    if (gBattlerAttacker == battlerDef
-                     || !IsBattlerAlive(battlerDef)
-                     || (moveTarget == MOVE_TARGET_BOTH && gBattlerAttacker == BATTLE_PARTNER(battlerDef))
-                     || IsBattlerProtected(gBattlerAttacker, battlerDef, gCurrentMove)
-                     || gBattleMoveEffects[gMovesInfo[gCurrentMove].effect].twoTurnEffect)
-                    {
-                        gBattleStruct->moveResultFlags[battlerDef] = MOVE_RESULT_NO_EFFECT;
-                        gBattleStruct->noResultString[battlerDef] = TRUE;
-                        continue;
-                    }
-
-                    if (AbilityBattleEffects(ABILITYEFFECT_WOULD_BLOCK, battlerDef, 0, 0, 0)
-                     || (IsBattlerTerrainAffected(gBattlerAttacker, STATUS_FIELD_PSYCHIC_TERRAIN) && GetMovePriority(gBattlerAttacker, gCurrentMove) > 0))
-                    {
-                        gBattleStruct->moveResultFlags[battlerDef] = 0;
-                        gBattleStruct->noResultString[battlerDef] = TRUE;
-                    }
-                    else if (AbilityBattleEffects(ABILITYEFFECT_WOULD_ABSORB, battlerDef, 0, 0, gCurrentMove))
-                    {
-                        gBattleStruct->moveResultFlags[battlerDef] = 0;
-                        gBattleStruct->noResultString[battlerDef] = DO_ACCURACY_CHECK;
-                    }
-                    else
-                    {
-                        CalcTypeEffectivenessMultiplier(gCurrentMove, gMovesInfo[gCurrentMove].type, gBattlerAttacker, battlerDef, GetBattlerAbility(battlerDef), TRUE);
-                    }
+                    gBattleStruct->moveResultFlags[battlerDef] = MOVE_RESULT_NO_EFFECT;
+                    gBattleStruct->noResultString[battlerDef] = TRUE;
                 }
-                if (moveTarget == MOVE_TARGET_BOTH)
-                    gBattleStruct->numSpreadTargets = CountAliveMonsInBattle(BATTLE_ALIVE_SIDE, gBattlerAttacker);
+                if (gBattleStruct->commandingDondozo & (1u << battlerDef))
+                {
+                    gBattleStruct->moveResultFlags[battlerDef] = MOVE_RESULT_MISSED;
+                    gBattleStruct->noResultString[battlerDef] = TRUE;
+                }
+                else if (AbilityBattleEffects(ABILITYEFFECT_WOULD_BLOCK, battlerDef, 0, 0, 0)
+                      || (IsBattlerTerrainAffected(gBattlerAttacker, STATUS_FIELD_PSYCHIC_TERRAIN) && GetMovePriority(gBattlerAttacker, gCurrentMove) > 0))
+                {
+                    gBattleStruct->moveResultFlags[battlerDef] = 0;
+                    gBattleStruct->noResultString[battlerDef] = TRUE;
+                }
+                else if (AbilityBattleEffects(ABILITYEFFECT_WOULD_ABSORB, battlerDef, 0, 0, gCurrentMove))
+                {
+                    gBattleStruct->moveResultFlags[battlerDef] = 0;
+                    gBattleStruct->noResultString[battlerDef] = DO_ACCURACY_CHECK;
+                }
                 else
-                    gBattleStruct->numSpreadTargets = CountAliveMonsInBattle(BATTLE_ALIVE_EXCEPT_BATTLER, gBattlerAttacker);
-
+                {
+                    CalcTypeEffectivenessMultiplier(gCurrentMove, gMovesInfo[gCurrentMove].type, gBattlerAttacker, battlerDef, GetBattlerAbility(battlerDef), TRUE);
+                }
             }
+
+            if (moveTarget == MOVE_TARGET_BOTH)
+                gBattleStruct->numSpreadTargets = CountAliveMonsInBattle(BATTLE_ALIVE_SIDE, gBattlerAttacker);
+            else
+                gBattleStruct->numSpreadTargets = CountAliveMonsInBattle(BATTLE_ALIVE_EXCEPT_BATTLER, gBattlerAttacker);
+
             gBattleStruct->atkCancellerTracker++;
             break;
         case CANCELLER_END:
