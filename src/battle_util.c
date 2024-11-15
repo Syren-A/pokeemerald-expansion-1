@@ -11956,12 +11956,11 @@ static inline bool32 TryStrongWindsWeakenAttack(u32 battlerDef)
     if (gBattleWeather & B_WEATHER_STRONG_WINDS && WEATHER_HAS_EFFECT)
     {
         if (gMovesInfo[gCurrentMove].category != DAMAGE_CATEGORY_STATUS
-         && IS_BATTLER_OF_TYPE(gBattlerTarget, TYPE_FLYING)
+         && IS_BATTLER_OF_TYPE(battlerDef, TYPE_FLYING)
          && gTypeEffectivenessTable[GetMoveType(gCurrentMove)][TYPE_FLYING] >= UQ_4_12(2.0)
          && !gBattleStruct->printedStrongWindsWeakenedAttack)
         {
             gBattleStruct->printedStrongWindsWeakenedAttack = TRUE;
-            gBattlerAbility = gBattlerTarget;
             BattleScriptPushCursor();
             gBattlescriptCurrInstr = BattleScript_AttackWeakenedByStrongWinds;
             return TRUE;
@@ -11971,7 +11970,20 @@ static inline bool32 TryStrongWindsWeakenAttack(u32 battlerDef)
 	return FALSE;
 }
 
-static inline bool32 TryActivateWeakenessBerry(u32 battlerDef, u32 resultFlags)
+static inline bool32 TryTeraShellDistortTypeMatchups(u32 battlerDef)
+{
+    if (gSpecialStatuses[battlerDef].teraShellAbilityDone)
+    {
+        gSpecialStatuses[battlerDef].teraShellAbilityDone = FALSE;
+        gBattleScripting.battler = battlerDef;
+        BattleScriptPushCursor();
+        gBattlescriptCurrInstr = BattleScript_TeraShellDistortingTypeMatchups;
+        return TRUE;
+    }
+    return FALSE;
+}
+
+static inline bool32 TryActivateWeakenessBerry(u32 battlerDef)
 {
     if (gSpecialStatuses[battlerDef].berryReduced && gBattleMons[battlerDef].item != ITEM_NONE)
     {
@@ -11987,14 +11999,6 @@ static inline bool32 TryActivateWeakenessBerry(u32 battlerDef, u32 resultFlags)
 	return FALSE;
 }
 
-static inline bool32 BattlerNotViableForSpreadAttack(u32 battlerDef, u32 moveTarget)
-{
-    return battlerDef == gBattlerAttacker
-        || !IsBattlerAlive(battlerDef)
-        || (battlerDef == BATTLE_PARTNER(gBattlerAttacker) && !(moveTarget & MOVE_TARGET_FOES_AND_ALLY))
-        || (gBattleStruct->noResultString[battlerDef] && gBattleStruct->noResultString[battlerDef] != DO_ACCURACY_CHECK);
-}
-
 bool32 ProcessPreAttackAnimationFuncs(void)
 {
 	if (IsDoubleSpreadMove())
@@ -12004,7 +12008,8 @@ bool32 ProcessPreAttackAnimationFuncs(void)
 		{
 			for (u32 battlerDef = 0; battlerDef < gBattlersCount; battlerDef++)
 			{
-                if (BattlerNotViableForSpreadAttack(battlerDef, moveTarget))
+                if (IsBattlerInvalidForSpreadMove(battlerDef, gBattlerAttacker, moveTarget)
+                 || (gBattleStruct->noResultString[battlerDef] && gBattleStruct->noResultString[battlerDef] != DO_ACCURACY_CHECK))
                     continue;
 
 				if (TryStrongWindsWeakenAttack(battlerDef))
@@ -12014,12 +12019,15 @@ bool32 ProcessPreAttackAnimationFuncs(void)
 
 		for (u32 battlerDef = 0; battlerDef < gBattlersCount; battlerDef++)
 		{
-            if (BattlerNotViableForSpreadAttack(battlerDef, moveTarget))
+            if (IsBattlerInvalidForSpreadMove(battlerDef, gBattlerAttacker, moveTarget)
+             || (gBattleStruct->noResultString[battlerDef] && gBattleStruct->noResultString[battlerDef] != DO_ACCURACY_CHECK))
                 continue;
 
+            if (TryTeraShellDistortTypeMatchups(battlerDef))
+                return TRUE;
             // According to Gen5 this happens after the attackanimation.
             // It doesn't have any impact on gameplay and is only a visual thing which can be adjust later.
-			if (TryActivateWeakenessBerry(battlerDef, gBattleStruct->moveResultFlags[battlerDef]))
+			if (TryActivateWeakenessBerry(battlerDef))
 				return TRUE;
 		}
 	}
@@ -12027,19 +12035,13 @@ bool32 ProcessPreAttackAnimationFuncs(void)
 	{
 		if (TryStrongWindsWeakenAttack(gBattlerTarget))
 			return TRUE;
-
-		if (TryActivateWeakenessBerry(gBattlerTarget, gBattleStruct->moveResultFlags[gBattlerTarget]))
+        if (TryTeraShellDistortTypeMatchups(gBattlerTarget))
+			return TRUE;
+		if (TryActivateWeakenessBerry(gBattlerTarget))
             return TRUE;
 	}
 
 	return FALSE;
-}
-
-bool32 IsBattlerInvalidForSpreadMove(u32 battlerAtk, u32 battlerDef, u32 moveTarget)
-{
-    return battlerDef == battlerAtk
-        || !IsBattlerAlive(battlerDef)
-        || (battlerDef == BATTLE_PARTNER(battlerAtk) && (moveTarget == MOVE_TARGET_BOTH));
 }
 
 void ClearDamageCalcResults(void)

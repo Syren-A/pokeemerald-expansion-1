@@ -1172,11 +1172,11 @@ bool32 ProteanTryChangeType(u32 battler, u32 ability, u32 move, u32 moveType)
 bool32 ShouldTeraShellDistortTypeMatchups(u32 move, u32 battlerDef)
 {
     if (!gSpecialStatuses[battlerDef].distortedTypeMatchups
-     && GetBattlerAbility(battlerDef) == ABILITY_TERA_SHELL
      && gBattleMons[battlerDef].species == SPECIES_TERAPAGOS_TERASTAL
+     && gBattleMons[battlerDef].hp == gBattleMons[battlerDef].maxHP
      && !IS_MOVE_STATUS(move)
      && MoveResultHasEffect(battlerDef)
-     && gBattleMons[battlerDef].hp == gBattleMons[battlerDef].maxHP)
+     && GetBattlerAbility(battlerDef) == ABILITY_TERA_SHELL)
         return TRUE;
 
     return FALSE;
@@ -1194,6 +1194,12 @@ static void Cmd_attackcanceler(void)
     s32 i;
     u16 attackerAbility = GetBattlerAbility(gBattlerAttacker);
     u32 moveType = GetMoveType(gCurrentMove);
+
+    // if (gBattleStruct->calculatedDamageDone)
+    // {
+    //     gBattlescriptCurrInstr = cmd->nextInstr;
+    //     return;
+    // }
 
     if (gBattleStruct->usedEjectItem & (1u << gBattlerAttacker))
     {
@@ -1909,14 +1915,6 @@ static void Cmd_ppreduce(void)
 
     gHitMarker &= ~HITMARKER_NO_PPDEDUCT;
     gBattlescriptCurrInstr = cmd->nextInstr;
-
-    if (ShouldTeraShellDistortTypeMatchups(gCurrentMove, gBattlerTarget))
-    {
-        gSpecialStatuses[gBattlerTarget].distortedTypeMatchups = TRUE;
-        gBattlerAbility = gBattlerTarget;
-        BattleScriptPushCursor();
-        gBattlescriptCurrInstr = BattleScript_TeraShellDistortingTypeMatchups;
-    }
 }
 
 // The chance is 1/N for each stage.
@@ -2172,7 +2170,7 @@ static void Cmd_damagecalc(void)
 {
     CMD_ARGS();
 
-    if (gBattleStruct->calculatedDamageDone && gMultiHitCounter == 0)
+    if (gBattleStruct->calculatedDamageDone)
     {
         gBattlescriptCurrInstr = cmd->nextInstr;
         return;
@@ -2187,7 +2185,6 @@ static void Cmd_damagecalc(void)
     damageCalcData.randomFactor = TRUE;
     damageCalcData.updateFlags = TRUE;
 
-    // TODO: Reduce redundancy
     if (IsSpreadMove(moveTarget))
     {
         u32 battlerDef;
@@ -2198,6 +2195,11 @@ static void Cmd_damagecalc(void)
              || gBattleStruct->moveResultFlags[battlerDef] & MOVE_RESULT_NO_EFFECT)
                 continue;
 
+            if (ShouldTeraShellDistortTypeMatchups(gCurrentMove, battlerDef))
+            {
+                gSpecialStatuses[battlerDef].distortedTypeMatchups = TRUE;
+                gSpecialStatuses[battlerDef].teraShellAbilityDone = TRUE;
+            }
             GetShellSideArmCategory(battlerDef);
             damageCalcData.battlerDef = battlerDef;
             damageCalcData.isCrit = gSpecialStatuses[battlerDef].criticalHit;
@@ -2206,6 +2208,11 @@ static void Cmd_damagecalc(void)
     }
     else
     {
+        if (ShouldTeraShellDistortTypeMatchups(gCurrentMove, gBattlerTarget))
+        {
+            gSpecialStatuses[gBattlerTarget].distortedTypeMatchups = TRUE;
+            gSpecialStatuses[gBattlerTarget].teraShellAbilityDone = TRUE;
+        }
         GetShellSideArmCategory(gBattlerTarget);
         damageCalcData.battlerDef = gBattlerTarget;
         damageCalcData.isCrit = gSpecialStatuses[gBattlerTarget].criticalHit;
@@ -2336,7 +2343,8 @@ static void Cmd_adjustdamage(void)
             gSpecialStatuses[gBattlerAttacker].damagedMons |= 1u << battlerDef;
     }
 
-    gBattleStruct->calculatedDamageDone = TRUE;
+    if (calcSpreadMoveDamage)
+        gBattleStruct->calculatedDamageDone = TRUE;
     gBattlescriptCurrInstr = cmd->nextInstr;
 
     // TODO: might be a bug
