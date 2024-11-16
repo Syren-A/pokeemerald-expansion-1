@@ -3693,11 +3693,9 @@ u8 AtkCanceller_UnableToUseMove(u32 moveType)
                     {
                         gBattleStruct->moveResultFlags[battlerDef] = MOVE_RESULT_NO_EFFECT;
                         gBattleStruct->noResultString[battlerDef] = TRUE;
-                        continue;
                     }
-
-                    if (AbilityBattleEffects(ABILITYEFFECT_WOULD_BLOCK, battlerDef, 0, 0, 0)
-                     || (IsBattlerTerrainAffected(gBattlerAttacker, STATUS_FIELD_PSYCHIC_TERRAIN) && GetMovePriority(gBattlerAttacker, gCurrentMove) > 0))
+                    else if (AbilityBattleEffects(ABILITYEFFECT_WOULD_BLOCK, battlerDef, 0, 0, 0)
+                          || (IsBattlerTerrainAffected(gBattlerAttacker, STATUS_FIELD_PSYCHIC_TERRAIN) && GetMovePriority(gBattlerAttacker, gCurrentMove) > 0))
                     {
                         gBattleStruct->moveResultFlags[battlerDef] = 0;
                         gBattleStruct->noResultString[battlerDef] = TRUE;
@@ -11949,8 +11947,6 @@ u32 GetMoveType(u32 move)
 
 static inline bool32 TryStrongWindsWeakenAttack(u32 battlerDef)
 {
-    // B_WEATHER_STRONG_WINDS prints a string when it's about to reduce the power
-    // of a move that is Super Effective against a Flying-type Pokémon.
     if (gBattleWeather & B_WEATHER_STRONG_WINDS && WEATHER_HAS_EFFECT)
     {
         if (gMovesInfo[gCurrentMove].category != DAMAGE_CATEGORY_STATUS
@@ -11981,6 +11977,8 @@ static inline bool32 TryTeraShellDistortTypeMatchups(u32 battlerDef)
     return FALSE;
 }
 
+// According to Gen5 Weakness berry activation happens after the attackanimation.
+// It doesn't have any impact on gameplay and is only a visual thing which can be adjusted later.
 static inline bool32 TryActivateWeakenessBerry(u32 battlerDef)
 {
     if (gSpecialStatuses[battlerDef].berryReduced && gBattleMons[battlerDef].item != ITEM_NONE)
@@ -12007,7 +12005,7 @@ bool32 ProcessPreAttackAnimationFuncs(void)
 			for (u32 battlerDef = 0; battlerDef < gBattlersCount; battlerDef++)
 			{
                 if (IsBattlerInvalidForSpreadMove(battlerDef, gBattlerAttacker, moveTarget)
-                 || (battlerDef == BATTLE_PARTNER(gBattlerAttacker) && !(moveTarget & MOVE_TARGET_FOES_AND_ALLY))
+                //  || (battlerDef == BATTLE_PARTNER(gBattlerAttacker) && !(moveTarget & MOVE_TARGET_FOES_AND_ALLY)) // This was in CFRU but I don't understand why you would need it
                  || (gBattleStruct->noResultString[battlerDef] && gBattleStruct->noResultString[battlerDef] != DO_ACCURACY_CHECK))
                     continue;
 
@@ -12019,14 +12017,12 @@ bool32 ProcessPreAttackAnimationFuncs(void)
 		for (u32 battlerDef = 0; battlerDef < gBattlersCount; battlerDef++)
 		{
             if (IsBattlerInvalidForSpreadMove(battlerDef, gBattlerAttacker, moveTarget)
-             || (battlerDef == BATTLE_PARTNER(gBattlerAttacker) && !(moveTarget & MOVE_TARGET_FOES_AND_ALLY))
+            //  || (battlerDef == BATTLE_PARTNER(gBattlerAttacker) && !(moveTarget & MOVE_TARGET_FOES_AND_ALLY)) // This was in CFRU but I don't understand why you would need it
              || (gBattleStruct->noResultString[battlerDef] && gBattleStruct->noResultString[battlerDef] != DO_ACCURACY_CHECK))
                 continue;
 
             if (TryTeraShellDistortTypeMatchups(battlerDef))
                 return TRUE;
-            // According to Gen5 this happens after the attackanimation.
-            // It doesn't have any impact on gameplay and is only a visual thing which can be adjust later.
 			if (TryActivateWeakenessBerry(battlerDef))
 				return TRUE;
 		}
