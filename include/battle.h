@@ -207,7 +207,6 @@ struct ProtectStruct
     u32 specialDmg;
     u8 physicalBattlerId;
     u8 specialBattlerId;
-
 };
 
 struct SpecialStatus
@@ -253,6 +252,7 @@ struct SpecialStatus
     u8 distortedTypeMatchups:1;
     u8 teraShellAbilityDone:1;
     u8 criticalHit:1;
+    u8 printedSpreadMoveNoEffectResultMessage:1;
 };
 
 struct SideTimer

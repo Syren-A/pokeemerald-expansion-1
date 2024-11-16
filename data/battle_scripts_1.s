@@ -7610,7 +7610,7 @@ BattleScript_AbilityPopUp:
 	sethword sABILITY_OVERWRITE, 0
 	return
 
-BattleScript_AbilityPopUpScripting:
+BattleScript_AbilityPopUpScripting::
 	.if B_ABILITY_POP_UP == TRUE
 	showabilitypopup BS_SCRIPTING
 	pause 40
@@ -10094,3 +10094,10 @@ BattleScript_EffectSnow::
 	call BattleScript_CheckPrimalWeather
 	setfieldweather ENUM_WEATHER_SNOW
 	goto BattleScript_MoveWeatherChange
+
+BattleScript_SpreadMoveResultMessage::
+	pause B_WAIT_TIME_MED
+	printfromtable gScrMissStringIds
+	waitmessage B_WAIT_TIME_LONG
+	flushtextbox
+	return

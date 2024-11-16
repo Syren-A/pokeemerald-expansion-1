@@ -2914,10 +2914,12 @@ static void Cmd_resultmessage(void)
             stringId = STRINGID_PKMNENDUREDHIT;
             break;
         case MOVE_RESULT_FAILED:
-            stringId = STRINGID_BUTITFAILED;
+			if (!IsDoubleSpreadMove())
+                stringId = STRINGID_BUTITFAILED;
             break;
         case MOVE_RESULT_DOESNT_AFFECT_FOE:
-            stringId = STRINGID_ITDOESNTAFFECT;
+			if (!IsDoubleSpreadMove())
+                stringId = STRINGID_ITDOESNTAFFECT;
             break;
         case MOVE_RESULT_FOE_HUNG_ON:
             gLastUsedItem = gBattleMons[gBattlerTarget].item;
@@ -2929,19 +2931,7 @@ static void Cmd_resultmessage(void)
         default:
             if (gBattleStruct->moveResultFlags[gBattlerTarget] & MOVE_RESULT_DOESNT_AFFECT_FOE)
             {
-                if (IsDoubleSpreadMove())
-                {
-                    if (ShouldPrintTwoFoesMessage(MOVE_RESULT_DOESNT_AFFECT_FOE))
-                        stringId = STRINGID_ITDOESNTAFFECT; // Change string
-                    else if (ShouldRelyOnTwoFoesMessage(MOVE_RESULT_DOESNT_AFFECT_FOE))
-                        stringId = 0; // Was handled or will be handled as a double string
-                    else
-                        stringId = STRINGID_ITDOESNTAFFECT;
-                }
-                else
-                {
-                    stringId = STRINGID_ITDOESNTAFFECT;
-                }
+                stringId = STRINGID_ITDOESNTAFFECT;
             }
             else if (gBattleStruct->moveResultFlags[gBattlerTarget] & MOVE_RESULT_ONE_HIT_KO)
             {
