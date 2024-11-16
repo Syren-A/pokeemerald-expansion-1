@@ -1114,7 +1114,6 @@ extern u16 gLockedMoves[MAX_BATTLERS_COUNT];
 extern u16 gLastUsedMove;
 extern u8 gLastHitBy[MAX_BATTLERS_COUNT];
 extern u16 gChosenMoveByBattler[MAX_BATTLERS_COUNT];
-extern u16 gMoveResultFlags;
 extern u32 gHitMarker;
 extern u8 gBideTarget[MAX_BATTLERS_COUNT];
 extern u32 gSideStatuses[NUM_BATTLE_SIDES];

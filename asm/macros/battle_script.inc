@@ -1771,6 +1771,12 @@
 	.2byte \flags
 	.endm
 
+	.macro jumpifmoveresultflags flags:req failInstr:req
+	callnative BS_JumpIfMoveResultFlags
+	.2byte \flags
+	.4byte \failInstr
+	.endm
+
 @ various command changed to more readable macros
 	.macro cancelmultiturnmoves battler:req
 	various \battler, VARIOUS_CANCEL_MULTI_TURN_MOVES
@@ -2410,7 +2416,7 @@
 	.endm
 
 	.macro jumpifmovehadnoeffect jumpInstr:req
-	jumpifbyte CMP_COMMON_BITS, gMoveResultFlags, MOVE_RESULT_NO_EFFECT, \jumpInstr
+	jumpifmoveresultflags MOVE_RESULT_NO_EFFECT, \jumpInstr
 	.endm
 
 	.macro jumpifside battler:req, side:req, equalJumpInstr:req

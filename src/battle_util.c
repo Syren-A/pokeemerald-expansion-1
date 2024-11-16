@@ -11970,6 +11970,7 @@ static inline bool32 PrintNoEffectResultMessage(u32 battlerDef)
         return FALSE;
 
     u32 moveResultFlags = gBattleStruct->moveResultFlags[battlerDef];
+    gBattleScripting.battler = battlerDef;
     if (moveResultFlags & MOVE_RESULT_MISSED && (!(moveResultFlags & MOVE_RESULT_DOESNT_AFFECT_FOE)
                                               || gBattleCommunication[MISS_TYPE] > B_MSG_AVOIDED_ATK))
     {
@@ -11991,7 +11992,6 @@ static inline bool32 PrintNoEffectResultMessage(u32 battlerDef)
     }
 
     BattleScriptPushCursor();
-    gBattleScripting.battler = battlerDef;
     gBattlescriptCurrInstr = BattleScript_SpreadMoveResultMessage;
     gSpecialStatuses[battlerDef].printedSpreadMoveNoEffectResultMessage = TRUE;
     return TRUE;
@@ -12049,7 +12049,6 @@ bool32 ProcessPreAttackAnimationFuncs(void)
 
 		for (u32 battlerDef = 0; battlerDef < gBattlersCount; battlerDef++)
 		{
-            //  || (battlerDef == BATTLE_PARTNER(gBattlerAttacker) && !(moveTarget & MOVE_TARGET_FOES_AND_ALLY)) // This was in CFRU but I don't understand why you would need it
             if (IsBattlerInvalidForSpreadMove(battlerDef, gBattlerAttacker, moveTarget))
                 continue;
 

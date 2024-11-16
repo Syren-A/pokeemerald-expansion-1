@@ -17818,3 +17818,13 @@ void BS_ClearMoveResultFlags(void)
     gBattleStruct->moveResultFlags[gBattlerTarget] &= ~(cmd->value);
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
+
+void BS_JumpIfMoveResultFlags(void)
+{
+    NATIVE_ARGS(u16 value, const u8 *jumpInstr);
+
+    if (gBattleStruct->moveResultFlags[gBattlerTarget] & cmd->value)
+        gBattlescriptCurrInstr = cmd->jumpInstr;
+    else
+        gBattlescriptCurrInstr = cmd->nextInstr;
+}
