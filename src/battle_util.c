@@ -8626,7 +8626,10 @@ bool32 IsBattlerProtected(u32 battlerAtk, u32 battlerDef, u32 move)
 
     // Max Guard is silly about the moves it blocks, including Teatime.
     if (gProtectStructs[battlerDef].maxGuarded && IsMoveBlockedByMaxGuard(move))
+    {
+        gBattleStruct->missStringId[battlerDef] = gBattleCommunication[MISS_TYPE] = B_MSG_PROTECTED;
         return TRUE;
+    }
 
     if (!gProtectStructs[battlerDef].maxGuarded // Max Guard cannot be bypassed by Unseen Fist
      && IsMoveMakingContact(move, gBattlerAttacker)
@@ -8646,7 +8649,10 @@ bool32 IsBattlerProtected(u32 battlerAtk, u32 battlerDef, u32 move)
      || (gSideStatuses[GetBattlerSide(battlerDef)] & SIDE_STATUS_MAT_BLOCK && !IS_MOVE_STATUS(move))
      || (gSideStatuses[GetBattlerSide(battlerDef)] & SIDE_STATUS_CRAFTY_SHIELD && IS_MOVE_STATUS(move))
      || (gSideStatuses[GetBattlerSide(battlerDef)] & SIDE_STATUS_WIDE_GUARD && GetBattlerMoveTargetType(gBattlerAttacker, move) & (MOVE_TARGET_BOTH | MOVE_TARGET_FOES_AND_ALLY)))
+    {
+        gBattleStruct->missStringId[battlerDef] = gBattleCommunication[MISS_TYPE] = B_MSG_PROTECTED;
         return TRUE;
+    }
 
     return FALSE;
 }
@@ -10528,7 +10534,7 @@ static inline uq4_12_t CalcTypeEffectivenessMultiplierInternal(u32 move, u32 mov
             gBattleStruct->moveResultFlags[battlerDef] |= (MOVE_RESULT_MISSED | MOVE_RESULT_DOESNT_AFFECT_FOE);
             gLastUsedAbility = ABILITY_LEVITATE;
             gLastLandedMoves[battlerDef] = 0;
-            gBattleCommunication[MISS_TYPE] = B_MSG_GROUND_MISS;
+            gBattleStruct->missStringId[battlerDef] = B_MSG_GROUND_MISS;
             RecordAbilityBattle(battlerDef, ABILITY_LEVITATE);
         }
     }
@@ -10554,7 +10560,7 @@ static inline uq4_12_t CalcTypeEffectivenessMultiplierInternal(u32 move, u32 mov
             gLastUsedAbility = gBattleMons[battlerDef].ability;
             gBattleStruct->moveResultFlags[battlerDef] |= MOVE_RESULT_MISSED;
             gLastLandedMoves[battlerDef] = 0;
-            gBattleCommunication[MISS_TYPE] = B_MSG_AVOIDED_DMG;
+            gBattleStruct->missStringId[battlerDef] = B_MSG_AVOIDED_DMG;
             RecordAbilityBattle(battlerDef, gBattleMons[battlerDef].ability);
         }
     }
@@ -11997,8 +12003,8 @@ bool32 ProcessPreAttackAnimationFuncs(void)
 		{
 			for (u32 battlerDef = 0; battlerDef < gBattlersCount; battlerDef++)
 			{
-                if (IsBattlerInvalidForSpreadMove(battlerDef, gBattlerAttacker, moveTarget)
-                 || (battlerDef == BATTLE_PARTNER(gBattlerAttacker) && !(moveTarget & MOVE_TARGET_FOES_AND_ALLY)) // This was in CFRU but I don't understand why you would need it
+                if (IsBattlerInvalidForSpreadMove(gBattlerAttacker, battlerDef, moveTarget)
+                 || (battlerDef == BATTLE_PARTNER(gBattlerAttacker) && !(moveTarget & MOVE_TARGET_FOES_AND_ALLY))
                  || (gBattleStruct->noResultString[battlerDef] && gBattleStruct->noResultString[battlerDef] != DO_ACCURACY_CHECK))
                     continue;
 
@@ -12009,8 +12015,8 @@ bool32 ProcessPreAttackAnimationFuncs(void)
 
 		for (u32 battlerDef = 0; battlerDef < gBattlersCount; battlerDef++)
 		{
-            if (IsBattlerInvalidForSpreadMove(battlerDef, gBattlerAttacker, moveTarget)
-             || (battlerDef == BATTLE_PARTNER(gBattlerAttacker) && !(moveTarget & MOVE_TARGET_FOES_AND_ALLY)) // This was in CFRU but I don't understand why you would need it
+            if (IsBattlerInvalidForSpreadMove(gBattlerAttacker, battlerDef, moveTarget)
+             || (battlerDef == BATTLE_PARTNER(gBattlerAttacker) && !(moveTarget & MOVE_TARGET_FOES_AND_ALLY))
              || (gBattleStruct->noResultString[battlerDef] && gBattleStruct->noResultString[battlerDef] != DO_ACCURACY_CHECK))
                 continue;
 
@@ -12041,6 +12047,7 @@ void ClearDamageCalcResults(void)
         gBattleStruct->calculatedCritChance[battler] = 0;
         gBattleStruct->moveResultFlags[battler] = 0;
         gBattleStruct->noResultString[battler] = 0;
+        gBattleStruct->missStringId[battler] = 0;
         gSpecialStatuses[battler].criticalHit = FALSE;
     }
 

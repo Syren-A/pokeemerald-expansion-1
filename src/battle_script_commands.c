@@ -1514,17 +1514,14 @@ static void Cmd_unused5(void)
 
 static bool32 JumpIfMoveAffectedByProtect(u32 move, u32 battler, u32 shouldJump)
 {
-    // bool8 affected = FALSE;
-    if (IsBattlerProtected(gBattlerAttacker, battler, move))
+    bool32 affected = IsBattlerProtected(gBattlerAttacker, battler, move);
+    if (affected)
     {
         gBattleStruct->moveResultFlags[battler] |= MOVE_RESULT_MISSED;
-        gBattleCommunication[MISS_TYPE] = B_MSG_PROTECTED;
-        return TRUE;
-        // affected = TRUE;
-        // if (shouldJump)
-        //     JumpIfMoveFailed(7, move);
+        if (shouldJump)
+            JumpIfMoveFailed(7, move);
     }
-    return FALSE;
+    return affected;
 }
 
 static bool32 AccuracyCalcHelper(u32 move, u32 battler)
@@ -1800,6 +1797,7 @@ static void AccuracyCheck(bool32 recalcDragonDarts, const u8 *nextInstr, const u
             if (!RandomPercentage(RNG_ACCURACY, accuracy))
             {
                 gBattleStruct->moveResultFlags[battlerDef] = MOVE_RESULT_MISSED;
+                gBattleStruct->missStringId[battlerDef] = gBattleCommunication[MISS_TYPE] = B_MSG_AVOIDED_ATK;
 
                 if (holdEffectAtk == HOLD_EFFECT_BLUNDER_POLICY)
                     gBattleStruct->blunderPolicy = TRUE;    // Only activates from missing through acc/evasion checks
@@ -1816,13 +1814,14 @@ static void AccuracyCheck(bool32 recalcDragonDarts, const u8 *nextInstr, const u
                     return;
                 }
 
-                gBattleCommunication[MISS_TYPE] = B_MSG_MISSED;
                 if (gMovesInfo[move].power)
                     CalcTypeEffectivenessMultiplier(move, moveType, gBattlerAttacker, battlerDef, GetBattlerAbility(battlerDef), TRUE);
             }
-
-            gBattleStruct->calculatedSpreadMoveAccuracy = TRUE;
         }
+
+        if (gBattleStruct->moveResultFlags[gBattlerTarget] & MOVE_RESULT_MISSED)
+            gBattleStruct->moveResultFlags[gBattlerTarget] = MOVE_RESULT_MISSED;
+        gBattleStruct->calculatedSpreadMoveAccuracy = TRUE;
         JumpIfMoveFailed(7, move);
     }
 }
@@ -2820,7 +2819,7 @@ static inline bool32 ShouldRelyOnTwoFoesMessage(u32 moveResult)
 {
 	return gBattlerTarget == BATTLE_PARTNER(BATTLE_OPPOSITE(gBattlerAttacker))
 		&& gBattleStruct->moveResultFlags[BATTLE_OPPOSITE(gBattlerAttacker)] & moveResult
-		&& !(gBattleStruct->moveResultFlags[BATTLE_OPPOSITE(gBattlerAttacker)] & MOVE_RESULT_MISSED)
+		&& !(gBattleStruct->moveResultFlags[BATTLE_OPPOSITE(gBattlerAttacker)] & MOVE_RESULT_MISSED && gBattleStruct->missStringId[BATTLE_OPPOSITE(gBattlerAttacker)] > B_MSG_AVOIDED_ATK)
 		&& !gBattleStruct->noResultString[BATTLE_OPPOSITE(gBattlerAttacker)];
 }
 
@@ -2846,11 +2845,12 @@ static void Cmd_resultmessage(void)
     }
 
     if (gBattleStruct->moveResultFlags[gBattlerTarget] & MOVE_RESULT_MISSED
-    && (!(gBattleStruct->moveResultFlags[gBattlerTarget] & MOVE_RESULT_DOESNT_AFFECT_FOE) || gBattleCommunication[MISS_TYPE] > B_MSG_AVOIDED_ATK))
+     && (!(gBattleStruct->moveResultFlags[gBattlerTarget] & MOVE_RESULT_DOESNT_AFFECT_FOE) || gBattleStruct->missStringId[gBattlerTarget] > 2))
     {
-        if (gBattleCommunication[MISS_TYPE] > B_MSG_AVOIDED_ATK) // Wonder Guard or Levitate - show the ability pop-up
+        if (gBattleStruct->missStringId[gBattlerTarget] > B_MSG_AVOIDED_ATK) // Wonder Guard or Levitate - show the ability pop-up
             CreateAbilityPopUp(gBattlerTarget, gBattleMons[gBattlerTarget].ability, (IsDoubleBattle()) != 0);
         gBattleCommunication[MSG_DISPLAY] = 1;
+        stringId = gMissStringIds[gBattleStruct->missStringId[gBattlerTarget]];
     }
     else
     {
@@ -2978,7 +2978,7 @@ static void Cmd_resultmessage(void)
     if (stringId)
         PrepareStringBattle(stringId, gBattlerAttacker);
 	else
-		gBattleCommunication[MSG_DISPLAY] = 0;
+        gBattleCommunication[MSG_DISPLAY] = 0;
 
     gBattlescriptCurrInstr = cmd->nextInstr;
 }

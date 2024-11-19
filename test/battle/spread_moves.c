@@ -205,21 +205,39 @@ DOUBLE_BATTLE_TEST("Spread Moves: A spread move attack will be weakened by stron
     }
 }
 
-DOUBLE_BATTLE_TEST("Spread Moves: AOE move vs Disguise, Volt Absorb and Lightning Rod")
+DOUBLE_BATTLE_TEST("Spread Moves: AOE move vs Disguise, Volt Absorb (right) and Lightning Rod (left)")
 {
-    KNOWN_FAILING;
     GIVEN {
         ASSUME(gMovesInfo[MOVE_DISCHARGE].target == MOVE_TARGET_FOES_AND_ALLY);
         ASSUME(gMovesInfo[MOVE_DISCHARGE].type == TYPE_ELECTRIC);
-        PLAYER(SPECIES_WOBBUFFET) { Speed(40); }
-        PLAYER(SPECIES_MIMIKYU) { Speed(30); }
-        OPPONENT(SPECIES_JOLTEON) { Speed(20); Ability(ABILITY_LIGHTNING_ROD); }
-        OPPONENT(SPECIES_LANTURN) { Speed(10); Ability(ABILITY_VOLT_ABSORB); HP(1); }
+        PLAYER(SPECIES_WOBBUFFET);
+        PLAYER(SPECIES_MIMIKYU);
+        OPPONENT(SPECIES_RAICHU) { Ability(ABILITY_LIGHTNING_ROD); }
+        OPPONENT(SPECIES_LANTURN) { Ability(ABILITY_VOLT_ABSORB); HP(1); }
     } WHEN {
         TURN { MOVE(playerLeft, MOVE_DISCHARGE); }
     } SCENE {
         ABILITY_POPUP(opponentLeft, ABILITY_LIGHTNING_ROD);
+        ANIMATION(ANIM_TYPE_MOVE, MOVE_DISCHARGE, playerLeft);
+        ABILITY_POPUP(playerRight, ABILITY_DISGUISE);
         ABILITY_POPUP(opponentRight, ABILITY_VOLT_ABSORB);
+    }
+}
+
+DOUBLE_BATTLE_TEST("Spread Moves: AOE move vs Disguise, Volt Absorb (left) and Lightning Rod (reft)")
+{
+    GIVEN {
+        ASSUME(gMovesInfo[MOVE_DISCHARGE].target == MOVE_TARGET_FOES_AND_ALLY);
+        ASSUME(gMovesInfo[MOVE_DISCHARGE].type == TYPE_ELECTRIC);
+        PLAYER(SPECIES_WOBBUFFET);
+        PLAYER(SPECIES_MIMIKYU);
+        OPPONENT(SPECIES_LANTURN) { Ability(ABILITY_VOLT_ABSORB); HP(1); }
+        OPPONENT(SPECIES_RAICHU) { Ability(ABILITY_LIGHTNING_ROD); }
+    } WHEN {
+        TURN { MOVE(playerLeft, MOVE_DISCHARGE); }
+    } SCENE {
+        ABILITY_POPUP(opponentRight, ABILITY_LIGHTNING_ROD);
+        ABILITY_POPUP(opponentLeft, ABILITY_VOLT_ABSORB);
         ANIMATION(ANIM_TYPE_MOVE, MOVE_DISCHARGE, playerLeft);
         ABILITY_POPUP(playerRight, ABILITY_DISGUISE);
     }
@@ -227,20 +245,19 @@ DOUBLE_BATTLE_TEST("Spread Moves: AOE move vs Disguise, Volt Absorb and Lightnin
 
 DOUBLE_BATTLE_TEST("Spread Moves: AOE move vs Eiscue and Mimikyu (Based on vanilla games)")
 {
-    KNOWN_FAILING; // Damage not based on speed but battler ID.
     GIVEN {
         ASSUME(gMovesInfo[MOVE_EARTHQUAKE].target == MOVE_TARGET_FOES_AND_ALLY);
         ASSUME(gMovesInfo[MOVE_EARTHQUAKE].category == DAMAGE_CATEGORY_PHYSICAL);
-        PLAYER(SPECIES_WOBBUFFET) { Speed(40); }
-        PLAYER(SPECIES_EISCUE) { Speed(30); }
-        OPPONENT(SPECIES_MIMIKYU) { Speed(20); }
-        OPPONENT(SPECIES_EISCUE) { Speed(10); }
+        PLAYER(SPECIES_WOBBUFFET);
+        PLAYER(SPECIES_EISCUE);
+        OPPONENT(SPECIES_MIMIKYU);
+        OPPONENT(SPECIES_EISCUE);
     } WHEN {
         TURN { MOVE(playerLeft, MOVE_EARTHQUAKE); }
     } SCENE {
         ANIMATION(ANIM_TYPE_MOVE, MOVE_EARTHQUAKE, playerLeft);
-        ABILITY_POPUP(playerRight, ABILITY_ICE_FACE);
         ABILITY_POPUP(opponentLeft, ABILITY_DISGUISE);
+        ABILITY_POPUP(playerRight, ABILITY_ICE_FACE);
         ABILITY_POPUP(opponentRight, ABILITY_ICE_FACE);
     }
 }
@@ -328,7 +345,6 @@ DOUBLE_BATTLE_TEST("Spread Moves: Spread move vs Eiscue and Mimikyu with 1 Eject
 
 DOUBLE_BATTLE_TEST("Spread Moves: Spread move vs Wide Guard")
 {
-    KNOWN_FAILING; // Message missing
     GIVEN {
         ASSUME(gMovesInfo[MOVE_HYPER_VOICE].target == MOVE_TARGET_BOTH);
         PLAYER(SPECIES_WOBBUFFET) { Speed(40); }
@@ -340,10 +356,10 @@ DOUBLE_BATTLE_TEST("Spread Moves: Spread move vs Wide Guard")
     } SCENE {
         ANIMATION(ANIM_TYPE_MOVE, MOVE_WIDE_GUARD, playerLeft);
         MESSAGE("Wide Guard protected your team!");
-        MESSAGE("The opposing Wobbuffet used Hyper Voice");
-        MESSAGE("Wide Guard protected Wobbuffet!");
-        MESSAGE("Wide Guard protected Wynaut!");
-        NOT { ANIMATION(ANIM_TYPE_MOVE, MOVE_HYPER_VOICE, playerLeft); }
+        MESSAGE("The opposing Wobbuffet used Hyper Voice!");
+        MESSAGE("Wobbuffet protected itself!");
+        MESSAGE("Wynaut protected itself!");
+        NOT ANIMATION(ANIM_TYPE_MOVE, MOVE_HYPER_VOICE, playerLeft);
     }
 }
 
@@ -360,7 +376,7 @@ DOUBLE_BATTLE_TEST("Spread Moves: Spread move vs one protecting mon")
     } SCENE {
         MESSAGE("The opposing Wobbuffet used Protect!");
         MESSAGE("Wobbuffet used Hyper Voice!");
-        MESSAGE("Foe Wobbuffet protected itself!");
+        MESSAGE("The opposing Wobbuffet protected itself!");
     }
 }
 
