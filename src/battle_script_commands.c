@@ -2868,20 +2868,11 @@ static void Cmd_resultmessage(void)
             if (IsDoubleSpreadMove())
             {
 				if (ShouldPrintTwoFoesMessage(MOVE_RESULT_SUPER_EFFECTIVE))
-                {
-                    if (GetBattlerSide(gBattlerAttacker) == B_SIDE_PLAYER)
-                        stringId = STRINGID_SUPEREFFECTIVETWOOPPOSINGFOES;
-                    else
-                        stringId = STRINGID_SUPEREFFECTIVETWOFOES;
-                }
+                    stringId = STRINGID_SUPEREFFECTIVETWOFOES;
 				else if (ShouldRelyOnTwoFoesMessage(MOVE_RESULT_SUPER_EFFECTIVE))
-                {
 					stringId = 0; // Was handled or will be handled as a double string
-                }
                 else
-                {
                     stringId = STRINGID_SUPEREFFECTIVE;
-                }
             }
             else if (!gMultiHitCounter)  // Don't print effectiveness on each hit in a multi hit attack
             {
@@ -2898,7 +2889,7 @@ static void Cmd_resultmessage(void)
 			if (IsDoubleSpreadMove())
 			{
 				if (ShouldPrintTwoFoesMessage(MOVE_RESULT_NOT_VERY_EFFECTIVE))
-					stringId = STRINGID_NOTVERYEFFECTIVE; // Needs a string
+					stringId = STRINGID_NOTVERYEFFECTIVETWOFOES;
 				else if (ShouldRelyOnTwoFoesMessage(MOVE_RESULT_NOT_VERY_EFFECTIVE))
 					stringId = 0; // Was handled or will be handled as a double string
 				else
@@ -2932,7 +2923,7 @@ static void Cmd_resultmessage(void)
                 if (IsDoubleSpreadMove())
                 {
                     if (ShouldPrintTwoFoesMessage(MOVE_RESULT_DOESNT_AFFECT_FOE))
-                        stringId = STRINGID_ITDOESNTAFFECT; // Change string
+                        stringId = STRINGID_ITDOESNTAFFECTTWOFOES;
                     else if (ShouldRelyOnTwoFoesMessage(MOVE_RESULT_DOESNT_AFFECT_FOE))
                         stringId = 0; // Was handled or will be handled as a double string
                     else

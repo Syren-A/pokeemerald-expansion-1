@@ -884,8 +884,9 @@ const u8 *const gBattleStringsTable[BATTLESTRINGS_COUNT] =
     [STRINGID_ELECTRICCURRENTISRUNNING]             = COMPOUND_STRING("An electric current is running across the battlefield!"),
     [STRINGID_SEEMSWEIRD]                           = COMPOUND_STRING("The battlefield seems weird!"),
     [STRINGID_WAGGLINGAFINGER]                      = COMPOUND_STRING("Waggling a finger let it use {B_CURRENT_MOVE}!"),
-    [STRINGID_SUPEREFFECTIVETWOFOES]                = COMPOUND_STRING("It's super effective on {B_ATK_NAME_WITH_PREFIX} and {B_ATK_PARTNER_NAME}!"),
-    [STRINGID_SUPEREFFECTIVETWOOPPOSINGFOES]        = COMPOUND_STRING("It's super effective on the opposing {B_ATK_NAME_WITH_PREFIX} and {B_ATK_PARTNER_NAME}!"),
+    [STRINGID_SUPEREFFECTIVETWOFOES]                = COMPOUND_STRING("It's super effective on {B_DEF_NAME_WITH_PREFIX2} and {B_DEF_PARTNER_NAME}!"),
+    [STRINGID_NOTVERYEFFECTIVETWOFOES]              = COMPOUND_STRING("It's not very effective on {B_DEF_NAME_WITH_PREFIX2} and {B_DEF_PARTNER_NAME}!"),
+    [STRINGID_ITDOESNTAFFECTTWOFOES]                = COMPOUND_STRING("It doesn't affect {B_DEF_NAME_WITH_PREFIX2} and {B_DEF_PARTNER_NAME}…"),
 };
 
 const u16 gTrainerUsedItemStringIds[] =
@@ -2715,7 +2716,7 @@ u32 BattleStringExpandPlaceholders(const u8 *src, u8 *dst, u32 dstSize)
                 toCpy = text;
                 break;
             case B_TXT_DEF_PARTNER_NAME: // partner target name
-                GetBattlerNick(gBattlerTarget, text);
+                GetBattlerNick(BATTLE_PARTNER(gBattlerTarget), text);
                 toCpy = text;
                 break;
             case B_TXT_EFF_NAME_WITH_PREFIX: // effect battler name with prefix

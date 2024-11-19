@@ -349,20 +349,105 @@ DOUBLE_BATTLE_TEST("Spread Moves: Spread move vs Wide Guard")
 
 DOUBLE_BATTLE_TEST("Spread Moves: Spread move vs one protecting mon")
 {
-    KNOWN_FAILING; // Wrong message
     GIVEN {
         ASSUME(gMovesInfo[MOVE_HYPER_VOICE].target == MOVE_TARGET_BOTH);
-        PLAYER(SPECIES_WOBBUFFET) { Speed(40); }
-        PLAYER(SPECIES_WYNAUT) { Speed(30); }
-        OPPONENT(SPECIES_WOBBUFFET) { Speed(20); }
-        OPPONENT(SPECIES_WYNAUT) { Speed(10); }
+        PLAYER(SPECIES_WOBBUFFET);
+        PLAYER(SPECIES_WYNAUT);
+        OPPONENT(SPECIES_WOBBUFFET);
+        OPPONENT(SPECIES_WYNAUT);
     } WHEN {
         TURN { MOVE(opponentLeft, MOVE_PROTECT); MOVE(playerLeft, MOVE_HYPER_VOICE); }
     } SCENE {
-        MESSAGE("Foe Wobbuffet used Protect!");
+        MESSAGE("The opposing Wobbuffet used Protect!");
         MESSAGE("Wobbuffet used Hyper Voice!");
         MESSAGE("Foe Wobbuffet protected itself!");
-        ANIMATION(ANIM_TYPE_MOVE, MOVE_WIDE_GUARD, playerLeft);
+    }
+}
+
+DOUBLE_BATTLE_TEST("Spread Moves: Super Effective Message on both opposing mons")
+{
+    GIVEN {
+        ASSUME(gMovesInfo[MOVE_PRECIPICE_BLADES].target == MOVE_TARGET_BOTH);
+        PLAYER(SPECIES_WOBBUFFET);
+        PLAYER(SPECIES_WYNAUT);
+        OPPONENT(SPECIES_GOLEM);
+        OPPONENT(SPECIES_ONIX);
+    } WHEN {
+        TURN { MOVE(playerLeft, MOVE_PRECIPICE_BLADES); }
+    } SCENE {
+        ANIMATION(ANIM_TYPE_MOVE, MOVE_PRECIPICE_BLADES, playerLeft);
+        HP_BAR(opponentLeft);
         HP_BAR(opponentRight);
+        MESSAGE("It's super effective on the opposing Golem and Onix!");
+    }
+}
+
+DOUBLE_BATTLE_TEST("Spread Moves: Super Effective Message on both player mons")
+{
+    GIVEN {
+        ASSUME(gMovesInfo[MOVE_PRECIPICE_BLADES].target == MOVE_TARGET_BOTH);
+        PLAYER(SPECIES_GOLEM);
+        PLAYER(SPECIES_ONIX);
+        OPPONENT(SPECIES_WOBBUFFET);
+        OPPONENT(SPECIES_WYNAUT);
+    } WHEN {
+        TURN { MOVE(opponentLeft, MOVE_PRECIPICE_BLADES); }
+    } SCENE {
+        ANIMATION(ANIM_TYPE_MOVE, MOVE_PRECIPICE_BLADES, opponentLeft);
+        HP_BAR(playerLeft);
+        HP_BAR(playerRight);
+        MESSAGE("It's super effective on Golem and Onix!");
+    }
+}
+
+DOUBLE_BATTLE_TEST("Spread Moves: Not very effective Message on both opposing mons")
+{
+    GIVEN {
+        ASSUME(gMovesInfo[MOVE_PRECIPICE_BLADES].target == MOVE_TARGET_BOTH);
+        PLAYER(SPECIES_WOBBUFFET);
+        PLAYER(SPECIES_WYNAUT);
+        OPPONENT(SPECIES_CHIKORITA);
+        OPPONENT(SPECIES_TREECKO);
+    } WHEN {
+        TURN { MOVE(playerLeft, MOVE_PRECIPICE_BLADES); }
+    } SCENE {
+        ANIMATION(ANIM_TYPE_MOVE, MOVE_PRECIPICE_BLADES, playerLeft);
+        HP_BAR(opponentLeft);
+        HP_BAR(opponentRight);
+        MESSAGE("It's not very effective on the opposing Chikorita and Treecko!");
+    }
+}
+
+DOUBLE_BATTLE_TEST("Spread Moves: Not very effective message on both player mons")
+{
+    GIVEN {
+        ASSUME(gMovesInfo[MOVE_PRECIPICE_BLADES].target == MOVE_TARGET_BOTH);
+        PLAYER(SPECIES_CHIKORITA);
+        PLAYER(SPECIES_TREECKO);
+        OPPONENT(SPECIES_WOBBUFFET);
+        OPPONENT(SPECIES_WYNAUT);
+    } WHEN {
+        TURN { MOVE(opponentLeft, MOVE_PRECIPICE_BLADES); }
+    } SCENE {
+        ANIMATION(ANIM_TYPE_MOVE, MOVE_PRECIPICE_BLADES, opponentLeft);
+        HP_BAR(playerLeft);
+        HP_BAR(playerRight);
+        MESSAGE("It's not very effective on Chikorita and Treecko!");
+    }
+}
+
+DOUBLE_BATTLE_TEST("Spread Moves: Doesn't affect message on both opposing mons")
+{
+    GIVEN {
+        ASSUME(gMovesInfo[MOVE_PRECIPICE_BLADES].target == MOVE_TARGET_BOTH);
+        PLAYER(SPECIES_WOBBUFFET);
+        PLAYER(SPECIES_WYNAUT);
+        OPPONENT(SPECIES_PIDGEY);
+        OPPONENT(SPECIES_HOOTHOOT);
+    } WHEN {
+        TURN { MOVE(playerLeft, MOVE_PRECIPICE_BLADES); }
+    } SCENE {
+        ANIMATION(ANIM_TYPE_MOVE, MOVE_PRECIPICE_BLADES, playerLeft);
+        MESSAGE("It doesn't affect the opposing Pidgey and Hoothoot!");
     }
 }
