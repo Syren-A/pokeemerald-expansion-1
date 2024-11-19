@@ -135,7 +135,6 @@ DOUBLE_BATTLE_TEST("Moxie/Chilling Neigh does not increase damage done by the sa
         ANIMATION(ANIM_TYPE_MOVE, MOVE_EARTHQUAKE, playerLeft);
         HP_BAR(opponentLeft, captureDamage: &damage[0]);
         HP_BAR(playerRight);
-        HP_BAR(opponentRight, captureDamage: &damage[1]);
         MESSAGE("Abra fainted!");
         ABILITY_POPUP(playerLeft, abilityPopUp);
         ANIMATION(ANIM_TYPE_GENERAL, B_ANIM_STATS_CHANGE, playerLeft);
@@ -145,6 +144,7 @@ DOUBLE_BATTLE_TEST("Moxie/Chilling Neigh does not increase damage done by the sa
             MESSAGE("Glastrier's Chilling Neigh raised its Attack!");
         else
             MESSAGE("Calyrex's Chilling Neigh raised its Attack!");
+        HP_BAR(opponentRight, captureDamage: &damage[1]);
     } THEN {
         EXPECT_EQ(playerLeft->statStages[STAT_ATK], DEFAULT_STAT_STAGE + 1);
         EXPECT_EQ(damage[0], damage[1]);

@@ -726,10 +726,8 @@
 #define STRINGID_WAGGLINGAFINGER                      724
 #define STRINGID_SUPEREFFECTIVETWOFOES                725
 #define STRINGID_SUPEREFFECTIVETWOOPPOSINGFOES        726
-#define STRINGID_SCR_PKMNPROTECTEDITSELF              727
-#define STRINGID_SCR_PKMNAVOIDEDATTACK                728
-#define STRINGID_SCR_ITDOESNTAFFECT                   729
-#define BATTLESTRINGS_COUNT                           730
+
+#define BATTLESTRINGS_COUNT                           727
 
 // This is the string id that gBattleStringsTable starts with.
 // String ids before this (e.g. STRINGID_INTROMSG) are not in the table,
@@ -761,13 +759,6 @@
 #define B_MSG_AVOIDED_ATK  2
 #define B_MSG_AVOIDED_DMG  3
 #define B_MSG_GROUND_MISS  4
-
-// gScrMissStringIds
-#define B_MSG_SCR_MISSED 0
-#define B_MSG_SCR_PROTECTED 1
-#define B_MSG_SCR_AVOIDED_ATK 2
-#define B_MSG_SCR_FAILED 3
-#define B_MSG_SCR_ITDOESNTEFFECT 4
 
 // gAbsorbDrainStringIds
 #define B_MSG_ABSORB      0

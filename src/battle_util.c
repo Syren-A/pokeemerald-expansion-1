@@ -11964,39 +11964,6 @@ static inline bool32 TryStrongWindsWeakenAttack(u32 battlerDef)
 	return FALSE;
 }
 
-static inline bool32 PrintNoEffectResultMessage(u32 battlerDef)
-{
-    if (gSpecialStatuses[battlerDef].printedSpreadMoveNoEffectResultMessage)
-        return FALSE;
-
-    u32 moveResultFlags = gBattleStruct->moveResultFlags[battlerDef];
-    gBattleScripting.battler = battlerDef;
-    if (moveResultFlags & MOVE_RESULT_MISSED && (!(moveResultFlags & MOVE_RESULT_DOESNT_AFFECT_FOE)
-                                              || gBattleCommunication[MISS_TYPE] > B_MSG_AVOIDED_ATK))
-    {
-        if (gBattleCommunication[MISS_TYPE] > B_MSG_AVOIDED_ATK) // Wonder Guard or Levitate - show the ability pop-up
-        {
-            BattleScriptPushCursor();
-            gBattlescriptCurrInstr = BattleScript_AbilityPopUpScripting;
-            gSpecialStatuses[battlerDef].printedSpreadMoveNoEffectResultMessage = TRUE;
-            return TRUE;
-        }
-    }
-    else if (moveResultFlags & MOVE_RESULT_FAILED)
-    {
-        gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_SCR_FAILED;
-    }
-    else if (moveResultFlags & MOVE_RESULT_DOESNT_AFFECT_FOE)
-    {
-        gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_SCR_ITDOESNTEFFECT;
-    }
-
-    BattleScriptPushCursor();
-    gBattlescriptCurrInstr = BattleScript_SpreadMoveResultMessage;
-    gSpecialStatuses[battlerDef].printedSpreadMoveNoEffectResultMessage = TRUE;
-    return TRUE;
-}
-
 static inline bool32 TryTeraShellDistortTypeMatchups(u32 battlerDef)
 {
     if (gSpecialStatuses[battlerDef].teraShellAbilityDone)
@@ -12038,7 +12005,7 @@ bool32 ProcessPreAttackAnimationFuncs(void)
 			for (u32 battlerDef = 0; battlerDef < gBattlersCount; battlerDef++)
 			{
                 if (IsBattlerInvalidForSpreadMove(battlerDef, gBattlerAttacker, moveTarget)
-                //  || (battlerDef == BATTLE_PARTNER(gBattlerAttacker) && !(moveTarget & MOVE_TARGET_FOES_AND_ALLY)) // This was in CFRU but I don't understand why you would need it
+                 || (battlerDef == BATTLE_PARTNER(gBattlerAttacker) && !(moveTarget & MOVE_TARGET_FOES_AND_ALLY)) // This was in CFRU but I don't understand why you would need it
                  || (gBattleStruct->noResultString[battlerDef] && gBattleStruct->noResultString[battlerDef] != DO_ACCURACY_CHECK))
                     continue;
 
@@ -12049,21 +12016,15 @@ bool32 ProcessPreAttackAnimationFuncs(void)
 
 		for (u32 battlerDef = 0; battlerDef < gBattlersCount; battlerDef++)
 		{
-            if (IsBattlerInvalidForSpreadMove(battlerDef, gBattlerAttacker, moveTarget))
+            if (IsBattlerInvalidForSpreadMove(battlerDef, gBattlerAttacker, moveTarget)
+             || (battlerDef == BATTLE_PARTNER(gBattlerAttacker) && !(moveTarget & MOVE_TARGET_FOES_AND_ALLY)) // This was in CFRU but I don't understand why you would need it
+             || (gBattleStruct->noResultString[battlerDef] && gBattleStruct->noResultString[battlerDef] != DO_ACCURACY_CHECK))
                 continue;
 
-            if (gBattleStruct->noResultString[battlerDef] || !MoveResultHasEffect(battlerDef))
-            {
-                if (PrintNoEffectResultMessage(battlerDef))
-                    return TRUE;
-            }
-            else
-            {
-                if (TryTeraShellDistortTypeMatchups(battlerDef))
-                    return TRUE;
-                if (TryActivateWeakenessBerry(battlerDef))
-                    return TRUE;
-            }
+            if (TryTeraShellDistortTypeMatchups(battlerDef))
+                return TRUE;
+			if (TryActivateWeakenessBerry(battlerDef))
+				return TRUE;
 		}
 	}
 	else
@@ -12088,7 +12049,6 @@ void ClearDamageCalcResults(void)
         gBattleStruct->moveResultFlags[battler] = 0;
         gBattleStruct->noResultString[battler] = 0;
         gSpecialStatuses[battler].criticalHit = FALSE;
-        gSpecialStatuses[battler].printedSpreadMoveNoEffectResultMessage = FALSE;
     }
 
     gBattleStruct->doneDoublesSpreadHit = FALSE;
