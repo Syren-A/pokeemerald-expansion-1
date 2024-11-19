@@ -837,14 +837,14 @@ struct BattleStruct
     // Simultaneous hp reduction for spread moves
     s32 calculatedDamage[MAX_BATTLERS_COUNT];
     s32 calculatedCritChance[MAX_BATTLERS_COUNT];
-    u32 moveResultFlags[MAX_BATTLERS_COUNT];
-    u32 missStringId[MAX_BATTLERS_COUNT];
+    u16 moveResultFlags[MAX_BATTLERS_COUNT];
 	u8 noResultString[MAX_BATTLERS_COUNT];
     u8 doneDoublesSpreadHit:1;
     u8 calculatedDamageDone:1;
     u8 calculatedSpreadMoveAccuracy:1;
     u8 printedStrongWindsWeakenedAttack:1;
     u8 numSpreadTargets:2;
+    u8 padding:2;
 };
 
 // The palaceFlags member of struct BattleStruct contains 1 flag per move to indicate which moves the AI should consider,

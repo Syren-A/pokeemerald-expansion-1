@@ -3688,8 +3688,7 @@ u8 AtkCanceller_UnableToUseMove(u32 moveType)
                     if (gBattlerAttacker == battlerDef
                      || !IsBattlerAlive(battlerDef)
                      || (moveTarget == MOVE_TARGET_BOTH && gBattlerAttacker == BATTLE_PARTNER(battlerDef))
-                     || IsBattlerProtected(gBattlerAttacker, battlerDef, gCurrentMove)
-                     || gBattleMoveEffects[gMovesInfo[gCurrentMove].effect].twoTurnEffect)
+                     || IsBattlerProtected(gBattlerAttacker, battlerDef, gCurrentMove))
                     {
                         gBattleStruct->moveResultFlags[battlerDef] = MOVE_RESULT_NO_EFFECT;
                         gBattleStruct->noResultString[battlerDef] = TRUE;
@@ -8627,10 +8626,7 @@ bool32 IsBattlerProtected(u32 battlerAtk, u32 battlerDef, u32 move)
 
     // Max Guard is silly about the moves it blocks, including Teatime.
     if (gProtectStructs[battlerDef].maxGuarded && IsMoveBlockedByMaxGuard(move))
-    {
-        gBattleStruct->missStringId[battlerDef] = gBattleCommunication[MISS_TYPE] = B_MSG_PROTECTED;
         return TRUE;
-    }
 
     if (!gProtectStructs[battlerDef].maxGuarded // Max Guard cannot be bypassed by Unseen Fist
      && IsMoveMakingContact(move, gBattlerAttacker)
@@ -8650,10 +8646,7 @@ bool32 IsBattlerProtected(u32 battlerAtk, u32 battlerDef, u32 move)
      || (gSideStatuses[GetBattlerSide(battlerDef)] & SIDE_STATUS_MAT_BLOCK && !IS_MOVE_STATUS(move))
      || (gSideStatuses[GetBattlerSide(battlerDef)] & SIDE_STATUS_CRAFTY_SHIELD && IS_MOVE_STATUS(move))
      || (gSideStatuses[GetBattlerSide(battlerDef)] & SIDE_STATUS_WIDE_GUARD && GetBattlerMoveTargetType(gBattlerAttacker, move) & (MOVE_TARGET_BOTH | MOVE_TARGET_FOES_AND_ALLY)))
-    {
-        gBattleStruct->missStringId[battlerDef] = gBattleCommunication[MISS_TYPE] = B_MSG_PROTECTED;
         return TRUE;
-    }
 
     return FALSE;
 }
@@ -10532,8 +10525,8 @@ static inline uq4_12_t CalcTypeEffectivenessMultiplierInternal(u32 move, u32 mov
         modifier = UQ_4_12(0.0);
         if (recordAbilities && defAbility == ABILITY_LEVITATE)
         {
-            gLastUsedAbility = ABILITY_LEVITATE;
             gBattleStruct->moveResultFlags[battlerDef] |= (MOVE_RESULT_MISSED | MOVE_RESULT_DOESNT_AFFECT_FOE);
+            gLastUsedAbility = ABILITY_LEVITATE;
             gLastLandedMoves[battlerDef] = 0;
             gBattleCommunication[MISS_TYPE] = B_MSG_GROUND_MISS;
             RecordAbilityBattle(battlerDef, ABILITY_LEVITATE);

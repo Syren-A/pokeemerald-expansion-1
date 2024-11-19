@@ -1517,7 +1517,6 @@ static bool32 JumpIfMoveAffectedByProtect(u32 move, u32 battler, u32 shouldJump)
     // bool8 affected = FALSE;
     if (IsBattlerProtected(gBattlerAttacker, battler, move))
     {
-        // DebugPrintf("JumpIfMoveAffectedByProtect");
         gBattleStruct->moveResultFlags[battler] |= MOVE_RESULT_MISSED;
         gBattleCommunication[MISS_TYPE] = B_MSG_PROTECTED;
         return TRUE;
@@ -1780,18 +1779,13 @@ static void AccuracyCheck(bool32 recalcDragonDarts, const u8 *nextInstr, const u
         for (u32 battlerDef = 0; battlerDef < gBattlersCount; battlerDef++)
         {
             if (gBattleStruct->calculatedSpreadMoveAccuracy)
-            {
-                if (!(gBattleStruct->moveResultFlags[gBattlerTarget] & MOVE_RESULT_MISSED))
-                    gBattleStruct->moveResultFlags[gBattlerTarget] = 0;
                 break;
-            }
 
             if ((!calcSpreadMove && battlerDef != gBattlerTarget)
              || IsBattlerInvalidForSpreadMove(gBattlerAttacker, battlerDef, moveTarget)
              || (gBattleStruct->noResultString[battlerDef] && gBattleStruct->noResultString[battlerDef] != DO_ACCURACY_CHECK))
                 continue;
 
-            // DebugPrintf("battlerDef: %d", battlerDef);
             if (JumpIfMoveAffectedByProtect(move, battlerDef, FALSE) || AccuracyCalcHelper(move, battlerDef))
                 continue;
 
@@ -1805,8 +1799,7 @@ static void AccuracyCheck(bool32 recalcDragonDarts, const u8 *nextInstr, const u
 
             if (!RandomPercentage(RNG_ACCURACY, accuracy))
             {
-                gBattleStruct->moveResultFlags[battlerDef] |= MOVE_RESULT_MISSED;
-                gBattleStruct->missStringId[battlerDef] = gBattleCommunication[MISS_TYPE] = B_MSG_AVOIDED_ATK;
+                gBattleStruct->moveResultFlags[battlerDef] = MOVE_RESULT_MISSED;
 
                 if (holdEffectAtk == HOLD_EFFECT_BLUNDER_POLICY)
                     gBattleStruct->blunderPolicy = TRUE;    // Only activates from missing through acc/evasion checks
@@ -2221,13 +2214,15 @@ static void Cmd_damagecalc(void)
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
 
-// TODO: Adjust type calc
 static void Cmd_typecalc(void)
 {
     CMD_ARGS();
 
-    u32 moveType = GetMoveType(gCurrentMove);
-    CalcTypeEffectivenessMultiplier(gCurrentMove, moveType, gBattlerAttacker, gBattlerTarget, GetBattlerAbility(gBattlerTarget), TRUE);
+    if (!IsSpreadMove(GetBattlerMoveTargetType(gBattlerAttacker, gCurrentMove))) // Handled in CANCELLER_MULTI_TARGET_MOVES for Spread Moves
+    {
+        u32 moveType = GetMoveType(gCurrentMove);
+        CalcTypeEffectivenessMultiplier(gCurrentMove, moveType, gBattlerAttacker, gBattlerTarget, GetBattlerAbility(gBattlerTarget), TRUE);
+    }
 
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
@@ -2399,7 +2394,7 @@ static void Cmd_attackanimation(void)
     if (gBattleControllerExecFlags || ProcessPreAttackAnimationFuncs())
         return;
 
-    u16 moveTarget = GetBattlerMoveTargetType(gBattlerAttacker, gCurrentMove);
+    u32 moveTarget = GetBattlerMoveTargetType(gBattlerAttacker, gCurrentMove);
 
     if ((gHitMarker & (HITMARKER_NO_ANIMATIONS | HITMARKER_DISABLE_ANIMATION))
         && gCurrentMove != MOVE_TRANSFORM
@@ -2431,8 +2426,7 @@ static void Cmd_attackanimation(void)
         }
         if (MoveResultHasEffect(gBattlerTarget))
         {
-            u8 multihit;
-
+            u32 multihit;
             if (gBattleMons[gBattlerTarget].status2 & STATUS2_SUBSTITUTE)
                 multihit = gMultiHitCounter;
             else if (gMultiHitCounter != 0 && gMultiHitCounter != 1)
@@ -2770,7 +2764,7 @@ static void Cmd_effectivenesssound(void)
         // TODO: FIX
 		// gBattleStruct->moveResultFlags[gBattlerTarget] = UpdateEffectivenessResultFlagsForDoubleSpreadMoves(gBattleStruct->moveResultFlags[gBattlerTarget]);
 	}
-	else if (!(gBattleStruct->moveResultFlags[gBattlerTarget] & MOVE_RESULT_NO_EFFECT) && DoesBattlerNegateDamage(gBattlerTarget))
+	else if (MoveResultHasEffect(gBattlerTarget) && DoesBattlerNegateDamage(gBattlerTarget))
 		gBattleStruct->moveResultFlags[gBattlerTarget] = 0;
 
     if (!(gBattleStruct->moveResultFlags[gBattlerTarget] & MOVE_RESULT_MISSED))
@@ -2826,7 +2820,7 @@ static inline bool32 ShouldRelyOnTwoFoesMessage(u32 moveResult)
 {
 	return gBattlerTarget == BATTLE_PARTNER(BATTLE_OPPOSITE(gBattlerAttacker))
 		&& gBattleStruct->moveResultFlags[BATTLE_OPPOSITE(gBattlerAttacker)] & moveResult
-		&& !(gBattleStruct->moveResultFlags[BATTLE_OPPOSITE(gBattlerAttacker)] & MOVE_RESULT_MISSED && gBattleStruct->missStringId[BATTLE_OPPOSITE(gBattlerAttacker)] > 2) // Partner was missed
+		&& !(gBattleStruct->moveResultFlags[BATTLE_OPPOSITE(gBattlerAttacker)] & MOVE_RESULT_MISSED)
 		&& !gBattleStruct->noResultString[BATTLE_OPPOSITE(gBattlerAttacker)];
 }
 
@@ -2856,7 +2850,6 @@ static void Cmd_resultmessage(void)
     {
         if (gBattleCommunication[MISS_TYPE] > B_MSG_AVOIDED_ATK) // Wonder Guard or Levitate - show the ability pop-up
             CreateAbilityPopUp(gBattlerTarget, gBattleMons[gBattlerTarget].ability, (IsDoubleBattle()) != 0);
-        stringId = gMissStringIds[gBattleCommunication[MISS_TYPE]];
         gBattleCommunication[MSG_DISPLAY] = 1;
     }
     else
@@ -2885,7 +2878,6 @@ static void Cmd_resultmessage(void)
             }
             break;
         case MOVE_RESULT_NOT_VERY_EFFECTIVE:
-
 			if (IsDoubleSpreadMove())
 			{
 				if (ShouldPrintTwoFoesMessage(MOVE_RESULT_NOT_VERY_EFFECTIVE))
@@ -2896,7 +2888,9 @@ static void Cmd_resultmessage(void)
 					stringId = STRINGID_NOTVERYEFFECTIVE; // Needs a string
 			}
             else if (!gMultiHitCounter)
+            {
                 stringId = STRINGID_NOTVERYEFFECTIVE;
+            }
             break;
         case MOVE_RESULT_ONE_HIT_KO:
             stringId = STRINGID_ONEHITKO;
@@ -2908,7 +2902,23 @@ static void Cmd_resultmessage(void)
             stringId = STRINGID_BUTITFAILED;
             break;
         case MOVE_RESULT_DOESNT_AFFECT_FOE:
-            stringId = STRINGID_ITDOESNTAFFECT;
+            if (IsDoubleSpreadMove())
+            {
+                if (ShouldPrintTwoFoesMessage(MOVE_RESULT_DOESNT_AFFECT_FOE))
+                {
+                    stringId = STRINGID_ITDOESNTAFFECTTWOFOES;
+                }
+                else if (ShouldRelyOnTwoFoesMessage(MOVE_RESULT_DOESNT_AFFECT_FOE))
+                {
+                    stringId = 0; // Was handled or will be handled as a double string
+                }
+                else
+                    stringId = STRINGID_ITDOESNTAFFECT;
+            }
+            else
+            {
+                stringId = STRINGID_ITDOESNTAFFECT;
+            }
             break;
         case MOVE_RESULT_FOE_HUNG_ON:
             gLastUsedItem = gBattleMons[gBattlerTarget].item;
@@ -2918,23 +2928,7 @@ static void Cmd_resultmessage(void)
             gBattlescriptCurrInstr = BattleScript_HangedOnMsg;
             return;
         default:
-            if (gBattleStruct->moveResultFlags[gBattlerTarget] & MOVE_RESULT_DOESNT_AFFECT_FOE)
-            {
-                if (IsDoubleSpreadMove())
-                {
-                    if (ShouldPrintTwoFoesMessage(MOVE_RESULT_DOESNT_AFFECT_FOE))
-                        stringId = STRINGID_ITDOESNTAFFECTTWOFOES;
-                    else if (ShouldRelyOnTwoFoesMessage(MOVE_RESULT_DOESNT_AFFECT_FOE))
-                        stringId = 0; // Was handled or will be handled as a double string
-                    else
-                        stringId = STRINGID_ITDOESNTAFFECT;
-                }
-                else
-                {
-                    stringId = STRINGID_ITDOESNTAFFECT;
-                }
-            }
-            else if (gBattleStruct->moveResultFlags[gBattlerTarget] & MOVE_RESULT_ONE_HIT_KO)
+            if (gBattleStruct->moveResultFlags[gBattlerTarget] & MOVE_RESULT_ONE_HIT_KO)
             {
                 gBattleStruct->moveResultFlags[gBattlerTarget] &= ~MOVE_RESULT_ONE_HIT_KO;
                 gBattleStruct->moveResultFlags[gBattlerTarget] &= ~MOVE_RESULT_SUPER_EFFECTIVE;
@@ -2979,14 +2973,12 @@ static void Cmd_resultmessage(void)
                 gBattlescriptCurrInstr = BattleScript_AffectionBasedEndurance;
                 return;
             }
-            else
-            {
-                gBattleCommunication[MSG_DISPLAY] = 0;
-            }
         }
     }
     if (stringId)
         PrepareStringBattle(stringId, gBattlerAttacker);
+	else
+		gBattleCommunication[MSG_DISPLAY] = 0;
 
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
