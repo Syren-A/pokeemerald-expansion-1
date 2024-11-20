@@ -356,7 +356,7 @@
 	.byte 0x3a
 	.endm
 
-	.macro healthbar_update battler:req
+	.macro healthbarupdate_nonmovedamage battler:req
 	.byte 0x3b
 	.byte \battler
 	.endm
