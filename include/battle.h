@@ -1218,7 +1218,6 @@ static inline bool32 IsBattlerInvalidForSpreadMove(u32 battlerAtk, u32 battlerDe
 {
     return battlerDef == battlerAtk
         || !IsBattlerAlive(battlerDef)
-        || gBattleStruct->commandingDondozo & (1u << battlerDef)
         || (battlerDef == BATTLE_PARTNER(battlerAtk) && (moveTarget == MOVE_TARGET_BOTH));
 }
 

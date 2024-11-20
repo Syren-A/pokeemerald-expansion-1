@@ -3680,11 +3680,15 @@ u8 AtkCanceller_UnableToUseMove(u32 moveType)
                 gBattleStruct->atkCancellerTracker++;
                 break;
             }
+
             u32 moveTarget = GetBattlerMoveTargetType(gBattlerAttacker, gCurrentMove);
             if (IsSpreadMove(moveTarget))
             {
                 for (u32 battlerDef = 0; battlerDef < gBattlersCount; battlerDef++)
                 {
+                    if (gBattleStruct->bouncedMoveIsUsed && B_SIDE_OPPONENT == GetBattlerSide(battlerDef))
+                        continue;
+
                     if (gBattlerAttacker == battlerDef
                      || !IsBattlerAlive(battlerDef)
                      || (moveTarget == MOVE_TARGET_BOTH && gBattlerAttacker == BATTLE_PARTNER(battlerDef))
@@ -8610,6 +8614,7 @@ bool32 IsMoveMakingContact(u32 move, u32 battlerAtk)
 
 bool32 IsBattlerProtected(u32 battlerAtk, u32 battlerDef, u32 move)
 {
+    DebugPrintf("[1]");
     // Decorate bypasses protect and detect, but not crafty shield
     if (move == MOVE_DECORATE)
     {
@@ -8635,9 +8640,11 @@ bool32 IsBattlerProtected(u32 battlerAtk, u32 battlerDef, u32 move)
      && IsMoveMakingContact(move, gBattlerAttacker)
      && GetBattlerAbility(gBattlerAttacker) == ABILITY_UNSEEN_FIST)
         return FALSE;
+
     if (gMovesInfo[move].ignoresProtect)
         return FALSE;
 
+    DebugPrintf("[2]");
     if ((gProtectStructs[battlerDef].protected)
      || (gProtectStructs[battlerDef].banefulBunkered)
      || (gProtectStructs[battlerDef].burningBulwarked)
@@ -8650,10 +8657,10 @@ bool32 IsBattlerProtected(u32 battlerAtk, u32 battlerDef, u32 move)
      || (gSideStatuses[GetBattlerSide(battlerDef)] & SIDE_STATUS_CRAFTY_SHIELD && IS_MOVE_STATUS(move))
      || (gSideStatuses[GetBattlerSide(battlerDef)] & SIDE_STATUS_WIDE_GUARD && GetBattlerMoveTargetType(gBattlerAttacker, move) & (MOVE_TARGET_BOTH | MOVE_TARGET_FOES_AND_ALLY)))
     {
-        gBattleStruct->missStringId[battlerDef] = gBattleCommunication[MISS_TYPE] = B_MSG_PROTECTED;
         return TRUE;
     }
 
+    gBattleStruct->missStringId[battlerDef] = gBattleCommunication[MISS_TYPE] = B_MSG_PROTECTED;
     return FALSE;
 }
 

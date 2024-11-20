@@ -1195,12 +1195,6 @@ static void Cmd_attackcanceler(void)
     u16 attackerAbility = GetBattlerAbility(gBattlerAttacker);
     u32 moveType = GetMoveType(gCurrentMove);
 
-    // if (gBattleStruct->calculatedDamageDone)
-    // {
-    //     gBattlescriptCurrInstr = cmd->nextInstr;
-    //     return;
-    // }
-
     if (gBattleStruct->usedEjectItem & (1u << gBattlerAttacker))
     {
         gBattleStruct->usedEjectItem = 0;
@@ -1294,7 +1288,6 @@ static void Cmd_attackcanceler(void)
 
     gHitMarker &= ~HITMARKER_ALLOW_NO_PP;
 
-    // TODO: Should ne only done once at the start of an attack
     if (!(gHitMarker & HITMARKER_OBEYS) && !(gBattleMons[gBattlerAttacker].status2 & STATUS2_MULTIPLETURNS))
     {
         switch (gBattleStruct->obedienceResult)
@@ -1364,7 +1357,6 @@ static void Cmd_attackcanceler(void)
         gBattleStruct->bouncedMoveIsUsed = TRUE;
         // Edge case for bouncing a powder move against a grass type pokemon.
 
-        ClearDamageCalcResults();
         SetAtkCancellerForCalledMove();
         if (BlocksPrankster(gCurrentMove, gBattlerTarget, gBattlerAttacker, TRUE))
         {
@@ -1540,6 +1532,7 @@ static bool32 AccuracyCalcHelper(u32 move, u32 battler)
     {
         // if (!JumpIfMoveFailed(7, move))
         //     RecordAbilityBattle(gBattlerAttacker, ABILITY_NO_GUARD);
+        // TODO: NEEDS TO TRACK ABILITY
         return TRUE;
     }
     // If the target has the ability No Guard and they aren't involved in a Sky Drop or the current move isn't Sky Drop, move hits.
@@ -1548,6 +1541,7 @@ static bool32 AccuracyCalcHelper(u32 move, u32 battler)
     {
         // if (!JumpIfMoveFailed(7, move))
         //     RecordAbilityBattle(battler, ABILITY_NO_GUARD);
+        // TODO: NEEDS TO TRACK ABILITY
         return TRUE;
     }
     // If the target is under the effects of Telekinesis, and the move isn't a OH-KO move, move hits.
@@ -1556,6 +1550,7 @@ static bool32 AccuracyCalcHelper(u32 move, u32 battler)
           && gMovesInfo[move].effect != EFFECT_OHKO)
     {
         // JumpIfMoveFailed(7, move);
+        // TODO: NEEDS TO TRACK ABILITY
         return TRUE;
     }
 
@@ -1771,7 +1766,7 @@ static void AccuracyCheck(bool32 recalcDragonDarts, const u8 *nextInstr, const u
     {
         u32 moveType = GetMoveType(move);
         u32 moveTarget = GetBattlerMoveTargetType(gBattlerAttacker, move);
-		bool32 calcSpreadMove = IsSpreadMove(moveTarget);
+		bool32 calcSpreadMove = IsSpreadMove(moveTarget) && !IS_MOVE_STATUS(move);
 
         for (u32 battlerDef = 0; battlerDef < gBattlersCount; battlerDef++)
         {
@@ -5427,7 +5422,7 @@ static void Cmd_end(void)
     if (gBattleTypeFlags & BATTLE_TYPE_ARENA)
         BattleArena_AddSkillPoints(gBattlerAttacker);
 
-    ClearDamageCalcResults();
+    ClearDamageCalcResults(); // TODO: THIS IS NOT NEEDED, PRETTY SURE
     gCurrentActionFuncId = B_ACTION_TRY_FINISH;
 }
 
