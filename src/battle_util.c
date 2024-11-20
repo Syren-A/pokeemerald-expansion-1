@@ -3688,7 +3688,7 @@ u8 AtkCanceller_UnableToUseMove(u32 moveType)
                     if (gBattlerAttacker == battlerDef
                      || !IsBattlerAlive(battlerDef)
                      || (moveTarget == MOVE_TARGET_BOTH && gBattlerAttacker == BATTLE_PARTNER(battlerDef))
-                     || IsBattlerProtected(gBattlerAttacker, battlerDef, gCurrentMove))
+                     || IsBattlerProtected(gBattlerAttacker, battlerDef, gCurrentMove)) // Missing Invulnerable check
                     {
                         gBattleStruct->moveResultFlags[battlerDef] = MOVE_RESULT_NO_EFFECT;
                         gBattleStruct->noResultString[battlerDef] = TRUE;

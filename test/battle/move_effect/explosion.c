@@ -139,7 +139,7 @@ DOUBLE_BATTLE_TEST("Explosion boosted by Galvanize is correctly blocked by Volt 
         NOT HP_BAR(opponentLeft, hp: 0);
         HP_BAR(playerRight, hp: 0);
         HP_BAR(opponentRight, hp: 0);
-        MESSAGE("The opposing Wynaut fainted!");
+        MESSAGE("Wynaut fainted!");
         MESSAGE("The opposing Wobbuffet fainted!");
         MESSAGE("Geodude fainted!");
     }

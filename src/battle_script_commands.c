@@ -1797,7 +1797,7 @@ static void AccuracyCheck(bool32 recalcDragonDarts, const u8 *nextInstr, const u
             if (!RandomPercentage(RNG_ACCURACY, accuracy))
             {
                 gBattleStruct->moveResultFlags[battlerDef] = MOVE_RESULT_MISSED;
-                gBattleStruct->missStringId[battlerDef] = gBattleCommunication[MISS_TYPE] = B_MSG_AVOIDED_ATK;
+                gBattleStruct->missStringId[battlerDef] = gBattleCommunication[MISS_TYPE] = B_MSG_MISSED;
 
                 if (holdEffectAtk == HOLD_EFFECT_BLUNDER_POLICY)
                     gBattleStruct->blunderPolicy = TRUE;    // Only activates from missing through acc/evasion checks
@@ -2902,6 +2902,7 @@ static void Cmd_resultmessage(void)
             stringId = STRINGID_BUTITFAILED;
             break;
         case MOVE_RESULT_DOESNT_AFFECT_FOE:
+            DebugPrintf("gBattlerTarget %d", gBattlerTarget);
             if (IsDoubleSpreadMove())
             {
                 if (ShouldPrintTwoFoesMessage(MOVE_RESULT_DOESNT_AFFECT_FOE))
@@ -5050,8 +5051,6 @@ static void Cmd_checkteamslost(void)
 
 static void MoveValuesCleanUp(void)
 {
-    // TODO
-    gBattleStruct->moveResultFlags[gBattlerTarget] = 0;
     gBattleScripting.moveEffect = 0;
     gBattleCommunication[MISS_TYPE] = 0;
     if (!gMultiHitCounter)
@@ -11568,7 +11567,7 @@ static void Cmd_manipulatedamage(void)
     case DMG_SET_BIDE_DAMAGE:
         break;
     case DMG_COPY_TO_HP_DEALT: // TODO: Leech Seed tests, This can probably be simplified further since damage can be saved for all battlers
-        gHpDealt = gBattleStruct->calculatedDamage[gBattlerAttacker];
+        gHpDealt = gBattleStruct->calculatedDamage[gBattlerTarget];
         break;
     case DMG_COPY_FROM_HP_DEALT:
         gBattleStruct->calculatedDamage[gBattlerTarget] = gHpDealt;
@@ -14696,7 +14695,6 @@ static void Cmd_setyawn(void)
     }
 }
 
-// TODO: Check if correct
 static void Cmd_setdamagetohealthdifference(void)
 {
     CMD_ARGS(const u8 *failInstr);
