@@ -8614,54 +8614,51 @@ bool32 IsMoveMakingContact(u32 move, u32 battlerAtk)
 
 bool32 IsBattlerProtected(u32 battlerAtk, u32 battlerDef, u32 move)
 {
-    DebugPrintf("[1]");
-    // Decorate bypasses protect and detect, but not crafty shield
-    if (move == MOVE_DECORATE)
-    {
-        if (gSideStatuses[GetBattlerSide(battlerDef)] & SIDE_STATUS_CRAFTY_SHIELD)
-            return TRUE;
-        else if (gProtectStructs[battlerDef].protected)
-            return FALSE;
-    }
+    bool32 isProtected = FALSE;
 
-    // Z-Moves and Max Moves bypass protection (except Max Guard).
     if ((IsZMove(move) || IsMaxMove(move))
-         && (!gProtectStructs[battlerDef].maxGuarded || gMovesInfo[move].argument == MAX_EFFECT_BYPASS_PROTECT))
-        return FALSE;
+        && (!gProtectStructs[battlerDef].maxGuarded || gMovesInfo[move].argument == MAX_EFFECT_BYPASS_PROTECT))
+        isProtected = FALSE; // Z-Moves and Max Moves bypass protection (except Max Guard).
+    else if (gProtectStructs[battlerDef].maxGuarded && IsMoveBlockedByMaxGuard(move))
+        isProtected = TRUE;
+    else if (!gProtectStructs[battlerDef].maxGuarded // Max Guard cannot be bypassed by Unseen Fist
+          && IsMoveMakingContact(move, gBattlerAttacker)
+          && GetBattlerAbility(gBattlerAttacker) == ABILITY_UNSEEN_FIST)
+        isProtected = FALSE;
+    else if (gSideStatuses[GetBattlerSide(battlerDef)] & SIDE_STATUS_CRAFTY_SHIELD && IS_MOVE_STATUS(move))
+        isProtected = TRUE;
+    else if (gMovesInfo[move].ignoresProtect)
+        isProtected = FALSE;
+    else if (gProtectStructs[battlerDef].protected)
+        isProtected = TRUE;
+    else if (gSideStatuses[GetBattlerSide(battlerDef)] & SIDE_STATUS_WIDE_GUARD
+             && GetBattlerMoveTargetType(gBattlerAttacker, move) & (MOVE_TARGET_BOTH | MOVE_TARGET_FOES_AND_ALLY))
+        isProtected = TRUE;
+    else if (gProtectStructs[battlerDef].banefulBunkered)
+        isProtected = TRUE;
+    else if (gProtectStructs[battlerDef].burningBulwarked)
+        isProtected = TRUE;
+    else if ((gProtectStructs[battlerDef].obstructed || gProtectStructs[battlerDef].silkTrapped) && !IS_MOVE_STATUS(move))
+        isProtected = TRUE;
+    else if (gProtectStructs[battlerDef].spikyShielded)
+        isProtected = TRUE;
+    else if (gProtectStructs[battlerDef].kingsShielded && gMovesInfo[move].power != 0)
+        isProtected = TRUE;
+    else if (gProtectStructs[battlerDef].maxGuarded)
+        isProtected = TRUE;
+    else if (gSideStatuses[GetBattlerSide(battlerDef)] & SIDE_STATUS_QUICK_GUARD
+             && GetChosenMovePriority(gBattlerAttacker) > 0)
+        isProtected = TRUE;
+    else if (gSideStatuses[GetBattlerSide(battlerDef)] & SIDE_STATUS_MAT_BLOCK
+             && !IS_MOVE_STATUS(move))
+        isProtected = TRUE;
+    else
+        isProtected = FALSE;
 
-    // Max Guard is silly about the moves it blocks, including Teatime.
-    if (gProtectStructs[battlerDef].maxGuarded && IsMoveBlockedByMaxGuard(move))
-    {
+    if (isProtected)
         gBattleStruct->missStringId[battlerDef] = gBattleCommunication[MISS_TYPE] = B_MSG_PROTECTED;
-        return TRUE;
-    }
 
-    if (!gProtectStructs[battlerDef].maxGuarded // Max Guard cannot be bypassed by Unseen Fist
-     && IsMoveMakingContact(move, gBattlerAttacker)
-     && GetBattlerAbility(gBattlerAttacker) == ABILITY_UNSEEN_FIST)
-        return FALSE;
-
-    if (gMovesInfo[move].ignoresProtect)
-        return FALSE;
-
-    DebugPrintf("[2]");
-    if ((gProtectStructs[battlerDef].protected)
-     || (gProtectStructs[battlerDef].banefulBunkered)
-     || (gProtectStructs[battlerDef].burningBulwarked)
-     || ((gProtectStructs[battlerDef].obstructed || gProtectStructs[battlerDef].silkTrapped) && !IS_MOVE_STATUS(move))
-     || (gProtectStructs[battlerDef].spikyShielded)
-     || (gProtectStructs[battlerDef].kingsShielded && gMovesInfo[move].power != 0)
-     || (gProtectStructs[battlerDef].maxGuarded)
-     || (gSideStatuses[GetBattlerSide(battlerDef)] & SIDE_STATUS_QUICK_GUARD && GetChosenMovePriority(gBattlerAttacker) > 0)
-     || (gSideStatuses[GetBattlerSide(battlerDef)] & SIDE_STATUS_MAT_BLOCK && !IS_MOVE_STATUS(move))
-     || (gSideStatuses[GetBattlerSide(battlerDef)] & SIDE_STATUS_CRAFTY_SHIELD && IS_MOVE_STATUS(move))
-     || (gSideStatuses[GetBattlerSide(battlerDef)] & SIDE_STATUS_WIDE_GUARD && GetBattlerMoveTargetType(gBattlerAttacker, move) & (MOVE_TARGET_BOTH | MOVE_TARGET_FOES_AND_ALLY)))
-    {
-        return TRUE;
-    }
-
-    gBattleStruct->missStringId[battlerDef] = gBattleCommunication[MISS_TYPE] = B_MSG_PROTECTED;
-    return FALSE;
+    return isProtected;
 }
 
 // Only called directly when calculating damage type effectiveness

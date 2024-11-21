@@ -103,7 +103,7 @@ SINGLE_BATTLE_TEST("King's Shield, Silk Trap and Obstruct protect from damaging 
                     MESSAGE("Wobbuffet's Attack fell!");
                     #else
                     MESSAGE("Wobbuffet's Attack harshly fell!");
-                    #endif    
+                    #endif
                 } else if (statId == STAT_SPEED) {
                     MESSAGE("Wobbuffet's Speed fell!");
                 } else if (statId == STAT_DEF) {

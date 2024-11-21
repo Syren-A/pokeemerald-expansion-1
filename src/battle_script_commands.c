@@ -2433,7 +2433,15 @@ static void Cmd_attackanimation(void)
             else
                 multihit = gMultiHitCounter;
 
-            BtlController_EmitMoveAnimation(gBattlerAttacker, BUFFER_A, gCurrentMove, gBattleScripting.animTurn, gBattleMovePower, gBattleMoveDamage, gBattleMons[gBattlerAttacker].friendship, &gDisableStructs[gBattlerAttacker], multihit);
+            BtlController_EmitMoveAnimation(gBattlerAttacker,
+                                            BUFFER_A,
+                                            gCurrentMove,
+                                            gBattleScripting.animTurn,
+                                            gBattleMovePower,
+                                            gBattleStruct->calculatedDamage[gBattlerTarget],
+                                            gBattleMons[gBattlerAttacker].friendship,
+                                            &gDisableStructs[gBattlerAttacker],
+                                            multihit);
             gBattleScripting.animTurn++;
             gBattleScripting.animTargetsHit++;
             MarkBattlerForControllerExec(gBattlerAttacker);
