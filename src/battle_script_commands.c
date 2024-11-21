@@ -5909,11 +5909,9 @@ static void Cmd_moveend(void)
                 }
                 else if (IsBattlerAlive(gBattlerAttacker) && MoveResultHasEffect(gBattlerTarget))
                 {
-                    gBattleStruct->calculatedDamage[gBattlerAttacker] = (gBattleStruct->calculatedDamage[gBattlerTarget] * gMovesInfo[gCurrentMove].argument / 100);
-                    if (gBattleStruct->calculatedDamage[gBattlerAttacker] == 0)
-                        gBattleStruct->calculatedDamage[gBattlerAttacker] = 1;
+                    gBattleStruct->calculatedDamage[gBattlerAttacker] = max(1, (gBattleStruct->calculatedDamage[gBattlerTarget] * gMovesInfo[gCurrentMove].argument / 100));
                     gBattleStruct->calculatedDamage[gBattlerAttacker] = GetDrainedBigRootHp(gBattlerAttacker, gBattleStruct->calculatedDamage[gBattlerAttacker]);
-                    gHitMarker |= HITMARKER_IGNORE_SUBSTITUTE | HITMARKER_IGNORE_DISGUISE | HITMARKER_PASSIVE_DAMAGE;
+                    gHitMarker |= HITMARKER_IGNORE_SUBSTITUTE | HITMARKER_IGNORE_DISGUISE;
                     effect = TRUE;
                     if (GetBattlerAbility(gBattlerTarget) == ABILITY_LIQUID_OOZE)
                     {
@@ -11596,17 +11594,6 @@ static void Cmd_manipulatedamage(void)
         break;
     case DMG_RECOIL_FROM_IMMUNE:
         gBattleStruct->calculatedDamage[gBattlerAttacker] = GetNonDynamaxMaxHP(gBattlerTarget) / 2;
-        break;
-    case DMG_SET_BIDE_DAMAGE:
-        break;
-    case DMG_COPY_TO_HP_DEALT: // TODO: Leech Seed tests, This can probably be simplified further since damage can be saved for all battlers
-        gHpDealt = gBattleStruct->calculatedDamage[gBattlerTarget];
-        break;
-    case DMG_COPY_FROM_HP_DEALT:
-        gBattleStruct->calculatedDamage[gBattlerTarget] = gHpDealt;
-        break;
-    case DMG_SET_TO_ZERO: // TODO: test
-        gBattleStruct->calculatedDamage[gBattlerTarget] = 0;
         break;
     }
 
