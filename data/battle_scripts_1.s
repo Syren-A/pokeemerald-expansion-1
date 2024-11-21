@@ -1809,12 +1809,13 @@ BattleScript_EffectFinalGambit::
 	datahpupdate BS_TARGET
 	resultmessage
 	waitmessage B_WAIT_TIME_LONG
-	healthbarupdate BS_ATTACKER
-	datahpupdate BS_ATTACKER
 	setadditionaleffects
-	tryfaintmon BS_ATTACKER
 	tryfaintmon BS_TARGET
 	jumpifmovehadnoeffect BattleScript_MoveEnd
+	setatkhptozero
+	healthbarupdate BS_ATTACKER
+	datahpupdate BS_ATTACKER
+	tryfaintmon BS_ATTACKER
 	goto BattleScript_MoveEnd
 
 BattleScript_EffectHitSwitchTarget::

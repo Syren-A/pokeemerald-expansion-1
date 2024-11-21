@@ -11570,9 +11570,7 @@ static void Cmd_manipulatedamage(void)
         gBattleStruct->calculatedDamage[gBattlerAttacker] = GetDrainedBigRootHp(gBattlerAttacker, gBattleStruct->calculatedDamage[gBattlerAttacker]);
         break;
     case DMG_CURR_ATTACKER_HP:
-        u32 dmg = GetNonDynamaxHP(gBattlerAttacker);
-        gBattleStruct->calculatedDamage[gBattlerTarget] = dmg;
-        gBattleStruct->calculatedDamage[gBattlerAttacker] = dmg;
+        gBattleStruct->calculatedDamage[gBattlerTarget] = GetNonDynamaxHP(gBattlerAttacker);
         break;
     case DMG_RECOIL_FROM_IMMUNE:
         gBattleStruct->calculatedDamage[gBattlerAttacker] = GetNonDynamaxMaxHP(gBattlerTarget) / 2;
