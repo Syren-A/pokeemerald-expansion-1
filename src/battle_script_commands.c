@@ -1518,91 +1518,73 @@ static bool32 JumpIfMoveAffectedByProtect(u32 move, u32 battler, u32 shouldJump)
 
 static bool32 AccuracyCalcHelper(u32 move, u32 battler)
 {
+    u32 effect = FALSE;
+    u32 ability = ABILITY_NONE;
+
     if ((gStatuses3[battler] & STATUS3_ALWAYS_HITS && gDisableStructs[battler].battlerWithSureHit == gBattlerAttacker)
      || (B_TOXIC_NEVER_MISS >= GEN_6 && gMovesInfo[move].effect == EFFECT_TOXIC && IS_BATTLER_OF_TYPE(gBattlerAttacker, TYPE_POISON))
      || gStatuses4[battler] & STATUS4_GLAIVE_RUSH)
     {
-        // JumpIfMoveFailed(7, move);
-        return TRUE;
+        effect = TRUE;
     }
     // If the attacker has the ability No Guard and they aren't targeting a Pokemon involved in a Sky Drop with the move Sky Drop, move hits.
     else if (GetBattlerAbility(gBattlerAttacker) == ABILITY_NO_GUARD
           && !(gStatuses3[battler] & STATUS3_COMMANDER)
           && (gMovesInfo[move].effect != EFFECT_SKY_DROP || gBattleStruct->skyDropTargets[battler] == 0xFF))
     {
-        // if (!JumpIfMoveFailed(7, move))
-        //     RecordAbilityBattle(gBattlerAttacker, ABILITY_NO_GUARD);
-        // TODO: NEEDS TO TRACK ABILITY
-        return TRUE;
+        effect = TRUE;
+        ability = ABILITY_NO_GUARD;
     }
     // If the target has the ability No Guard and they aren't involved in a Sky Drop or the current move isn't Sky Drop, move hits.
     else if (GetBattlerAbility(battler) == ABILITY_NO_GUARD
           && (gMovesInfo[move].effect != EFFECT_SKY_DROP || gBattleStruct->skyDropTargets[battler] == 0xFF))
     {
-        // if (!JumpIfMoveFailed(7, move))
-        //     RecordAbilityBattle(battler, ABILITY_NO_GUARD);
-        // TODO: NEEDS TO TRACK ABILITY
-        return TRUE;
+        effect = TRUE;
+        ability = ABILITY_NO_GUARD;
     }
     // If the target is under the effects of Telekinesis, and the move isn't a OH-KO move, move hits.
     else if (gStatuses3[battler] & STATUS3_TELEKINESIS
           && !(gStatuses3[battler] & STATUS3_SEMI_INVULNERABLE)
           && gMovesInfo[move].effect != EFFECT_OHKO)
     {
-        // JumpIfMoveFailed(7, move);
-        // TODO: NEEDS TO TRACK ABILITY
-        return TRUE;
+        effect = TRUE;
     }
-
-    if (GetActiveGimmick(gBattlerAttacker) == GIMMICK_Z_MOVE && !(gStatuses3[battler] & STATUS3_SEMI_INVULNERABLE))
+    else if (GetActiveGimmick(gBattlerAttacker) == GIMMICK_Z_MOVE && !(gStatuses3[battler] & STATUS3_SEMI_INVULNERABLE))
     {
-        // JumpIfMoveFailed(7, move);
-        return TRUE;
+        effect = TRUE;
     }
-
-    if ((gStatuses3[battler] & STATUS3_COMMANDER)
-     || (gStatuses3[battler] & STATUS3_PHANTOM_FORCE)
-     || ((gStatuses3[battler] & STATUS3_ON_AIR) && !(gMovesInfo[move].damagesAirborne || gMovesInfo[move].damagesAirborneDoubleDamage))
-     || ((gStatuses3[battler] & STATUS3_UNDERGROUND) && !gMovesInfo[move].damagesUnderground)
-     || ((gStatuses3[battler] & STATUS3_UNDERWATER) && !gMovesInfo[move].damagesUnderwater))
+    else if ((gStatuses3[battler] & STATUS3_COMMANDER)
+          || (gStatuses3[battler] & STATUS3_PHANTOM_FORCE)
+          || ((gStatuses3[battler] & STATUS3_ON_AIR) && !(gMovesInfo[move].damagesAirborne || gMovesInfo[move].damagesAirborneDoubleDamage))
+          || ((gStatuses3[battler] & STATUS3_UNDERGROUND) && !gMovesInfo[move].damagesUnderground)
+          || ((gStatuses3[battler] & STATUS3_UNDERWATER) && !gMovesInfo[move].damagesUnderwater))
     {
         gBattleStruct->moveResultFlags[battler] |= MOVE_RESULT_MISSED;
-        // JumpIfMoveFailed(7, move);
-        return TRUE;
+        effect = TRUE;
     }
-
-    if (WEATHER_HAS_EFFECT)
+    else if (WEATHER_HAS_EFFECT)
     {
         if ((gMovesInfo[move].effect == EFFECT_THUNDER || gMovesInfo[move].effect == EFFECT_RAIN_ALWAYS_HIT)
             && IsBattlerWeatherAffected(battler, B_WEATHER_RAIN))
-        {
-            // thunder/hurricane/genie moves ignore acc checks in rain unless target is holding utility umbrella
-            // JumpIfMoveFailed(7, move);
-            return TRUE;
-        }
+            effect = TRUE;
         else if ((gBattleWeather & (B_WEATHER_HAIL | B_WEATHER_SNOW)) && gMovesInfo[move].effect == EFFECT_BLIZZARD)
-        {
-            // Blizzard ignores acc checks in Hail in Gen4+
-            // JumpIfMoveFailed(7, move);
-            return TRUE;
-        }
+            effect = TRUE;
     }
-
-    if (B_MINIMIZE_DMG_ACC >= GEN_6
+    else if (B_MINIMIZE_DMG_ACC >= GEN_6
      && (gStatuses3[battler] & STATUS3_MINIMIZED)
      && gMovesInfo[move].minimizeDoubleDamage)
     {
-        // JumpIfMoveFailed(7, move);
-        return TRUE;
+        effect = TRUE;
     }
-
-    if (gMovesInfo[move].accuracy == 0)
+    else if (gMovesInfo[move].accuracy == 0)
     {
-        // JumpIfMoveFailed(7, move);
-        return TRUE;
+        effect = TRUE;
     }
 
-    return FALSE;
+    if (ability != ABILITY_NONE)
+        RecordAbilityBattle(gBattlerAttacker, ABILITY_NO_GUARD);
+
+    return effect;
 }
 
 u32 GetTotalAccuracy(u32 battlerAtk, u32 battlerDef, u32 move, u32 atkAbility, u32 defAbility, u32 atkHoldEffect, u32 defHoldEffect)
@@ -5430,7 +5412,6 @@ static void Cmd_end(void)
     if (gBattleTypeFlags & BATTLE_TYPE_ARENA)
         BattleArena_AddSkillPoints(gBattlerAttacker);
 
-    ClearDamageCalcResults(); // TODO: THIS IS NOT NEEDED, PRETTY SURE
     gCurrentActionFuncId = B_ACTION_TRY_FINISH;
 }
 
@@ -9486,7 +9467,6 @@ static void Cmd_various(void)
     {
         VARIOUS_ARGS(u8 stat);
         i = cmd->stat;
-        // TODO: Check if correct
         gBattleStruct->calculatedDamage[gBattlerAttacker] = *(u16 *)(&gBattleMons[battler].attack) + (i - 1);
         gBattleStruct->calculatedDamage[gBattlerAttacker] *= gStatStageRatios[gBattleMons[battler].statStages[i]][0];
         gBattleStruct->calculatedDamage[gBattlerAttacker] /= gStatStageRatios[gBattleMons[battler].statStages[i]][1];
@@ -11590,7 +11570,9 @@ static void Cmd_manipulatedamage(void)
         gBattleStruct->calculatedDamage[gBattlerAttacker] = GetDrainedBigRootHp(gBattlerAttacker, gBattleStruct->calculatedDamage[gBattlerAttacker]);
         break;
     case DMG_CURR_ATTACKER_HP:
-        gBattleStruct->calculatedDamage[gBattlerTarget] = GetNonDynamaxHP(gBattlerAttacker);
+        u32 dmg = GetNonDynamaxHP(gBattlerAttacker);
+        gBattleStruct->calculatedDamage[gBattlerTarget] = dmg;
+        gBattleStruct->calculatedDamage[gBattlerAttacker] = dmg;
         break;
     case DMG_RECOIL_FROM_IMMUNE:
         gBattleStruct->calculatedDamage[gBattlerAttacker] = GetNonDynamaxMaxHP(gBattlerTarget) / 2;
@@ -17835,6 +17817,16 @@ void BS_JumpIfMoveResultFlags(void)
     NATIVE_ARGS(u16 value, const u8 *jumpInstr);
 
     if (gBattleStruct->moveResultFlags[gBattlerTarget] & cmd->value)
+        gBattlescriptCurrInstr = cmd->jumpInstr;
+    else
+        gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+void BS_JumpIfCriticalHit(void)
+{
+    NATIVE_ARGS(const u8 *jumpInstr);
+
+    if (gSpecialStatuses[gBattlerTarget].criticalHit)
         gBattlescriptCurrInstr = cmd->jumpInstr;
     else
         gBattlescriptCurrInstr = cmd->nextInstr;

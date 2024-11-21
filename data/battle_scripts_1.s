@@ -1809,7 +1809,6 @@ BattleScript_EffectFinalGambit::
 	datahpupdate BS_TARGET
 	resultmessage
 	waitmessage B_WAIT_TIME_LONG
-	dmgtocurrattackerhp
 	healthbarupdate BS_ATTACKER
 	datahpupdate BS_ATTACKER
 	setadditionaleffects
@@ -4620,7 +4619,7 @@ BattleScript_BeatUpLoop::
 	trydobeatup BattleScript_BeatUpEnd, BattleScript_ButItFailed
 	printstring STRINGID_PKMNATTACK
 	critcalc
-	jumpifbyte CMP_NOT_EQUAL, gIsCriticalHit, TRUE, BattleScript_BeatUpAttack @ TODO Add Callnative to check specific crit
+	jumpifcriticalhit BattleScript_BeatUpAttack
 	manipulatedamage DMG_DOUBLED
 BattleScript_BeatUpAttack::
 	adjustdamage
