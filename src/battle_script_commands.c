@@ -1516,6 +1516,7 @@ static bool32 JumpIfMoveAffectedByProtect(u32 move, u32 battler, u32 shouldJump)
     return affected;
 }
 
+// TODO: the record ability check is wrong
 static bool32 AccuracyCalcHelper(u32 move, u32 battler)
 {
     u32 effect = FALSE;
@@ -1562,15 +1563,20 @@ static bool32 AccuracyCalcHelper(u32 move, u32 battler)
         gBattleStruct->moveResultFlags[battler] |= MOVE_RESULT_MISSED;
         effect = TRUE;
     }
-    else if (WEATHER_HAS_EFFECT)
+
+    if (WEATHER_HAS_EFFECT)
     {
         if ((gMovesInfo[move].effect == EFFECT_THUNDER || gMovesInfo[move].effect == EFFECT_RAIN_ALWAYS_HIT)
             && IsBattlerWeatherAffected(battler, B_WEATHER_RAIN))
             effect = TRUE;
         else if ((gBattleWeather & (B_WEATHER_HAIL | B_WEATHER_SNOW)) && gMovesInfo[move].effect == EFFECT_BLIZZARD)
             effect = TRUE;
+
+        if (effect)
+            return effect;
     }
-    else if (B_MINIMIZE_DMG_ACC >= GEN_6
+
+    if (B_MINIMIZE_DMG_ACC >= GEN_6
      && (gStatuses3[battler] & STATUS3_MINIMIZED)
      && gMovesInfo[move].minimizeDoubleDamage)
     {
@@ -2745,7 +2751,7 @@ static void Cmd_effectivenesssound(void)
             return;
         }
         // TODO: FIX
-		// gBattleStruct->moveResultFlags[gBattlerTarget] = UpdateEffectivenessResultFlagsForDoubleSpreadMoves(gBattleStruct->moveResultFlags[gBattlerTarget]);
+		gBattleStruct->moveResultFlags[gBattlerTarget] = UpdateEffectivenessResultFlagsForDoubleSpreadMoves(gBattleStruct->moveResultFlags[gBattlerTarget]);
 	}
 	else if (MoveResultHasEffect(gBattlerTarget) && DoesBattlerNegateDamage(gBattlerTarget))
 		gBattleStruct->moveResultFlags[gBattlerTarget] = 0;
@@ -2886,7 +2892,6 @@ static void Cmd_resultmessage(void)
             stringId = STRINGID_BUTITFAILED;
             break;
         case MOVE_RESULT_DOESNT_AFFECT_FOE:
-            DebugPrintf("gBattlerTarget %d", gBattlerTarget);
             if (IsDoubleSpreadMove())
             {
                 if (ShouldPrintTwoFoesMessage(MOVE_RESULT_DOESNT_AFFECT_FOE))
@@ -8058,22 +8063,24 @@ static void Cmd_hitanimation(void)
     {
         u32 battler = GetBattlerForBattleScript(cmd->battler);
 
-        if (MoveResultHasEffect(battler)
-         || !(gHitMarker & HITMARKER_IGNORE_SUBSTITUTE)
-         || !(DoesSubstituteBlockMove(gBattlerAttacker, battler, gCurrentMove))
-         || gDisableStructs[battler].substituteHP == 0)
+        if (MoveResultHasEffect(battler))
         {
-            BtlController_EmitHitAnimation(battler, BUFFER_A);
-            MarkBattlerForControllerExec(battler);
+            if (!(gHitMarker & HITMARKER_IGNORE_SUBSTITUTE)
+             || !(DoesSubstituteBlockMove(gBattlerAttacker, battler, gCurrentMove))
+             || gDisableStructs[battler].substituteHP == 0)
+            {
+                BtlController_EmitHitAnimation(battler, BUFFER_A);
+                MarkBattlerForControllerExec(battler);
+            }
         }
-
     }
 	else if (!gBattleStruct->doneDoublesSpreadHit)
 	{
         u32 battlerDef;
 		for (battlerDef = 0; battlerDef < gBattlersCount; battlerDef++)
 		{
-            if (gBattleStruct->moveResultFlags[battlerDef] & MOVE_RESULT_NO_EFFECT)
+            if (gBattleStruct->moveResultFlags[battlerDef] & MOVE_RESULT_NO_EFFECT
+             && !gBattleStruct->noResultString[battlerDef])
                 continue;
 
             if (!(gHitMarker & HITMARKER_IGNORE_SUBSTITUTE)
