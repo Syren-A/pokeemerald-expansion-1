@@ -78,6 +78,24 @@ DOUBLE_BATTLE_TEST("Battler end turn effects are done per battler for each state
    }
 }
 
+DOUBLE_BATTLE_TEST("End Turn Burn")
+{
+    GIVEN {
+        PLAYER(SPECIES_VENUSAUR) { Speed(1); }
+        PLAYER(SPECIES_CHARIZARD) { Speed(2); }
+        OPPONENT(SPECIES_BLASTOISE) { Speed(4); }
+        OPPONENT(SPECIES_WYNAUT) { Speed(3); }
+    } WHEN {
+        TURN { MOVE(playerRight, MOVE_HEAT_WAVE); }
+    } SCENE {
+        MESSAGE("Foe Blastoise is hurt by its burn!");
+        HP_BAR(opponentLeft);
+
+        MESSAGE("Foe Wynaut is hurt by its burn!");
+        HP_BAR(opponentRight);
+   }
+}
+
 DOUBLE_BATTLE_TEST("End Turn Effects Test")
 {
     GIVEN {

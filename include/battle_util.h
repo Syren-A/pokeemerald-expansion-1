@@ -155,7 +155,6 @@ enum EndTurnResolutionOrder
     ENDTURN_EMERGENCY_EXIT_4,
     ENDTURN_ABILITIES,
     ENDTURN_FOURTH_EVENT_BLOCK,
-    ENDTURN_COUNT,
 };
 
 enum FirstEventBlock
