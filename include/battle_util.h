@@ -50,14 +50,15 @@ enum {
 // For the first argument of ItemBattleEffects, to deteremine which block of item effects to try
 enum ItemEffect
 {
-    ITEMEFFECT_ON_SWITCH_IN,           
+    ITEMEFFECT_NONE,
+    ITEMEFFECT_ON_SWITCH_IN,
     ITEMEFFECT_ON_SWITCH_IN_FIRST_TURN,
-    ITEMEFFECT_NORMAL,                 
-    ITEMEFFECT_MOVE_END,               
-    ITEMEFFECT_KINGSROCK,              
-    ITEMEFFECT_TARGET,                 
-    ITEMEFFECT_ORBS,                   
-    ITEMEFFECT_LIFEORB_SHELLBELL,      
+    ITEMEFFECT_NORMAL,
+    ITEMEFFECT_MOVE_END,
+    ITEMEFFECT_KINGSROCK,
+    ITEMEFFECT_TARGET,
+    ITEMEFFECT_ORBS,
+    ITEMEFFECT_LIFEORB_SHELLBELL,
     ITEMEFFECT_USE_LAST_ITEM, // move end effects for just the battler, not whole field
     ITEMEFFECT_STATS_CHANGED, // For White Herb and Eject Pack
 };
@@ -235,7 +236,7 @@ void TryRestoreHeldItems(void);
 bool32 CanStealItem(u32 battlerStealing, u32 battlerItem, u16 item);
 void TrySaveExchangedItem(u32 battler, u16 stolenItem);
 bool32 IsPartnerMonFromSameTrainer(u32 battler);
-u8 TryHandleSeed(u32 battler, u32 terrainFlag, u8 statId, u16 itemId, bool32 execute);
+u32 TryHandleSeed(u32 battler, u32 terrainFlag, u32 statId, u32 itemId, enum ItemEffect caseID);
 bool32 IsBattlerAffectedByHazards(u32 battler, bool32 toxicSpikes);
 void SortBattlersBySpeed(u8 *battlers, bool32 slowToFast);
 bool32 CompareStat(u32 battler, u8 statId, u8 cmpTo, u8 cmpKind);
