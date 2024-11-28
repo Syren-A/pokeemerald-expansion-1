@@ -48,16 +48,19 @@ enum {
 #define ABILITYEFFECT_WATER_SPORT                253 // Only used if B_SPORT_TURNS >= GEN_6
 
 // For the first argument of ItemBattleEffects, to deteremine which block of item effects to try
-#define ITEMEFFECT_ON_SWITCH_IN                 0
-#define ITEMEFFECT_NORMAL                       1
-#define ITEMEFFECT_DUMMY                        2 // Unused, empty
-#define ITEMEFFECT_MOVE_END                     3
-#define ITEMEFFECT_KINGSROCK                    4
-#define ITEMEFFECT_TARGET                       5
-#define ITEMEFFECT_ORBS                         6
-#define ITEMEFFECT_LIFEORB_SHELLBELL            7
-#define ITEMEFFECT_USE_LAST_ITEM                8 // move end effects for just the battler, not whole field
-#define ITEMEFFECT_STATS_CHANGED                9 // For White Herb and Eject Pack
+enum ItemEffect
+{
+    ITEMEFFECT_ON_SWITCH_IN,           
+    ITEMEFFECT_ON_SWITCH_IN_FIRST_TURN,
+    ITEMEFFECT_NORMAL,                 
+    ITEMEFFECT_MOVE_END,               
+    ITEMEFFECT_KINGSROCK,              
+    ITEMEFFECT_TARGET,                 
+    ITEMEFFECT_ORBS,                   
+    ITEMEFFECT_LIFEORB_SHELLBELL,      
+    ITEMEFFECT_USE_LAST_ITEM, // move end effects for just the battler, not whole field
+    ITEMEFFECT_STATS_CHANGED, // For White Herb and Eject Pack
+};
 
 #define WEATHER_HAS_EFFECT ((!IsAbilityOnField(ABILITY_CLOUD_NINE) && !IsAbilityOnField(ABILITY_AIR_LOCK)))
 
