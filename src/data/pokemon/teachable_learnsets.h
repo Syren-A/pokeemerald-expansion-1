@@ -18906,7 +18906,6 @@ static const u16 sBurmyTeachableLearnset[] = {
 static const u16 sWormadamPlantCloakTeachableLearnset[] = {
     MOVE_ATTRACT,
     MOVE_BULLET_SEED,
-    MOVE_DIG,
     MOVE_DOUBLE_TEAM,
     MOVE_FACADE,
     MOVE_FLASH,
