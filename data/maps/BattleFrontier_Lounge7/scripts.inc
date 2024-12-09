@@ -219,6 +219,12 @@ BattleFrontier_Lounge7_EventScript_IcyWind::
 	goto BattleFrontier_Lounge7_EventScript_ConfirmMoveSelection
 	end
 
+BattleFrontier_Lounge7_EventScript_IcyWindX::
+	setvar VAR_0x8008, 24
+	setvar VAR_0x8005, MOVE_BULLDOZE
+	goto BattleFrontier_Lounge7_EventScript_ConfirmMoveSelection
+	end
+
 BattleFrontier_Lounge7_EventScript_Endure::
 	setvar VAR_0x8008, 48
 	setvar VAR_0x8005, MOVE_ENDURE
