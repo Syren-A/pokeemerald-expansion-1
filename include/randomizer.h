@@ -17,22 +17,14 @@
 
 enum RandomizerFeature
 {
-    // Wild encounter randomization.
-    RANDOMIZE_WILD_MON,
-    // Trainer party randomization.
-    RANDOMIZE_TRAINER_MON,
-    // Item ball and hidden item randomization.
-    RANDOMIZE_FIELD_ITEMS,
-    // Randomization of species base stats. Not yet implemented.
-    RANDOMIZE_BASE_STATS,
-    // Randomization of species types. Not yet implemented.
-    RANDOMIZE_MON_TYPES,
-    // Randomization of species learnset. Not yet implemented.
-    RANDOMIZE_LEARNSET,
-    // Randomization of fixed encounters.
-    RANDOMIZE_FIXED_MON,
-    // Randomization of starter Pokémon species.
-    RANDOMIZE_STARTERS,
+    RANDOMIZE_WILD_MON,    // Wild encounter randomization.
+    RANDOMIZE_TRAINER_MON, // Trainer party randomization.
+    RANDOMIZE_FIELD_ITEMS, // Item ball and hidden item randomization.
+    RANDOMIZE_BASE_STATS,  // Randomization of species base stats. Not yet implemented.
+    RANDOMIZE_MON_TYPES,   // Randomization of species types. Not yet implemented.
+    RANDOMIZE_LEARNSET,    // Randomization of species learnset. Not yet implemented.
+    RANDOMIZE_FIXED_MON,   // Randomization of fixed encounters.
+    RANDOMIZE_STARTERS,    // Randomization of starter Pokémon species.
 };
 
 enum RandomizerReason
@@ -48,8 +40,7 @@ enum RandomizerReason
 };
 
 enum RandomizerOption {
-    // Controls how a species is randomized.
-    RANDOMIZER_OPTION_SPECIES_MODE,
+    RANDOMIZER_OPTION_SPECIES_MODE, // Controls how a species is randomized.
 };
 
 enum RandomizerSpeciesMode {
@@ -58,10 +49,10 @@ enum RandomizerSpeciesMode {
     MON_RANDOM_LEGEND_AWARE,
     MON_RANDOM_BST,
     MON_EVOLUTION,
-    // Other modes here.
+    // Other (custom) modes here.
 
     // A dummy mode to end the list.
-    MAX_MON_MODE
+    MON_MODE_MAX_COUNT
 };
 
 // This object can be passed to IsRandomizationPossible to speed up queries.
@@ -84,33 +75,33 @@ static inline u16 RandomizerNext(struct Sfc32State* state)
 }
 u32 RandomizerNextRange(struct Sfc32State* state, u32 range);
 
-u16 RandomizerRand(enum RandomizerReason reason, u32 data1, u32 data2);
-u16 RandomizerRandRange(enum RandomizerReason reason, u32 data1, u32 data2, u16 range);
+u32 RandomizerRand(enum RandomizerReason reason, u32 data1, u32 data2);
+u16 RandomizerRandRange(enum RandomizerReason reason, u32 data1, u32 data2, u32 range);
 
-static inline u8 RandomizeMonType(u16 species, u8 typeNum)
+static inline u32 RandomizeMonType(u32 species, u32 typeNum)
 {
     return (u8)RandomizerRandRange(RANDOMIZER_REASON_SPECIES_TYPE, species, typeNum, NUMBER_OF_MON_TYPES);
 }
 
-u16 RandomizeFoundItem(u16 itemId, u8 mapNum, u8 mapGroup, u8 localId);
+u32 RandomizeFoundItem(u32 itemId, u32 mapNum, u32 mapGroup, u32 localId);
 void FindItemRandomize_NativeCall(struct ScriptContext *ctx);
 void FindHiddenItemRandomize_NativeCall(struct ScriptContext *ctx);
 
-u16 RandomizeMon(enum RandomizerReason reason, enum RandomizerSpeciesMode mode, u32 seed, u16 species);
-u16 RandomizeMonBaseForm(enum RandomizerReason reason, enum RandomizerSpeciesMode mode, u32 seed, u16 species);
+u32 RandomizeMon(enum RandomizerReason reason, enum RandomizerSpeciesMode mode, u32 seed, u32 species);
+u32 RandomizeMonBaseForm(enum RandomizerReason reason, enum RandomizerSpeciesMode mode, u32 seed, u32 species);
 
-u16 RandomizeWildEncounter(u16 species, u8 mapNum, u8 mapGroup, enum WildArea area, u8 slot);
+u32 RandomizeWildEncounter(u32 species, u32 mapNum, u32 mapGroup, enum WildArea area, u32 slot);
 
 // Returns TRUE if it is possible for the species tableSpecies to randomize into the species matchSpecies.
 // This does not mean that it actually did, though.
-bool32 IsRandomizationPossible(u16 tableSpecies, u16 matchSpecies);
+bool32 IsRandomizationPossible(u32 tableSpecies, u32 matchSpecies);
 
-u16 RandomizeTrainerMon(u16 trainerId, u8 slot, u8 totalMons, u16 species);
+u32 RandomizeTrainerMon(u32 trainerId, u32 slot, u32 totalMons, u32 species);
 
-u16 RandomizeFixedEncounterMon(u16 species, u8 mapNum, u8 mapGroup, u8 localId);
+u32 RandomizeFixedEncounterMon(u32 species, u32 mapNum, u32 mapGroup, u32 localId);
 
 // Given a starter slot and the list of original starters, returns the starter in that slot.
-u16 RandomizeStarter(u16 starterSlot, const u16* originalStarters);
+u32 RandomizeStarter(u32 starterSlot, const u16* originalStarters);
 
 static inline bool32 GroupSetsIntersect(struct RandomizerGroupSet* originalCache, struct RandomizerGroupSet* targetCache)
 {

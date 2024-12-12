@@ -35,40 +35,22 @@
 // If undefined, the feature will be enabled if one of the flags below is set.
 // If defined and set to TRUE, the feature will always be enabled.
 // If defined and set to FALSE, the feature will always be disabled.
-//#define FORCE_RANDOMIZE_WILD_MON      TRUE
-//#define FORCE_RANDOMIZE_FIELD_ITEMS   TRUE
-//#define FORCE_RANDOMIZE_TRAINER_MON   TRUE
-//#define FORCE_RANDOMIZE_FIXED_MON     TRUE
-//#define FORCE_RANDOMIZE_STARTERS      TRUE
+#define FORCE_RANDOMIZE_WILD_MON      FALSE
+#define FORCE_RANDOMIZE_FIELD_ITEMS   FALSE
+#define FORCE_RANDOMIZE_TRAINER_MON   FALSE
+#define FORCE_RANDOMIZE_FIXED_MON     FALSE
+#define FORCE_RANDOMIZE_STARTERS      FALSE
 
 // These flags control whether a particular randomization feature is active.
 // They are ignored and disabled if the flags above are set.
-#ifndef FORCE_RANDOMIZE_WILD_MON
 #define RANDOMIZER_FLAG_WILD_MON            FLAG_UNUSED_0x020
-#endif
-
-#ifndef FORCE_RANDOMIZE_FIELD_ITEMS
 #define RANDOMIZER_FLAG_FIELD_ITEMS         FLAG_UNUSED_0x021
-#endif
-
-#ifndef FORCE_RANDOMIZE_TRAINER_MON
 #define RANDOMIZER_FLAG_TRAINER_MON         FLAG_UNUSED_0x022
-#endif
-
-#ifndef FORCE_RANDOMIZE_FIXED_MON
 #define RANDOMIZER_FLAG_FIXED_MON           FLAG_UNUSED_0x023
-#endif
-
-#ifndef FORCE_RANDOMIZE_STARTERS
 #define RANDOMIZER_FLAG_STARTERS            FLAG_UNUSED_0x024
-#endif
-
 #define RANDOMIZER_VAR_SPECIES_MODE         VAR_UNUSED_0x404E
-
-#if RANDOMIZER_SEED_IS_TRAINER_ID == FALSE
 #define RANDOMIZER_VAR_SEED_L               VAR_UNUSED_0x40FA
 #define RANDOMIZER_VAR_SEED_H               VAR_UNUSED_0x40FB
-#endif
 
 #endif // RANDOMIZER_AVAILABLE
 

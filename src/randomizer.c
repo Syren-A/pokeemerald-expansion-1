@@ -16,35 +16,30 @@ bool32 RandomizerFeatureEnabled(enum RandomizerFeature feature)
     switch(feature)
     {
         case RANDOMIZE_WILD_MON:
-            #ifdef FORCE_RANDOMIZE_WILD_MON
+            if (FORCE_RANDOMIZE_WILD_MON)
                 return FORCE_RANDOMIZE_WILD_MON;
-            #else
+            else
                 return FlagGet(RANDOMIZER_FLAG_WILD_MON);
-            #endif
         case RANDOMIZE_FIELD_ITEMS:
-            #ifdef FORCE_RANDOMIZE_FIELD_ITEMS
+            if (FORCE_RANDOMIZE_FIELD_ITEMS)
                 return FORCE_RANDOMIZE_FIELD_ITEMS;
-            #else
+            else
                 return FlagGet(RANDOMIZER_FLAG_FIELD_ITEMS);
-            #endif
         case RANDOMIZE_TRAINER_MON:
-            #ifdef FORCE_RANDOMIZE_TRAINER_MON
+            if (FORCE_RANDOMIZE_TRAINER_MON)
                 return FORCE_RANDOMIZE_TRAINER_MON;
-            #else
+            else
                 return FlagGet(RANDOMIZER_FLAG_TRAINER_MON);
-            #endif
         case RANDOMIZE_FIXED_MON:
-            #ifdef FORCE_RANDOMIZE_FIXED_MON
+            if (FORCE_RANDOMIZE_FIXED_MON)
                 return FORCE_RANDOMIZE_FIXED_MON;
-            #else
+            else
                 return FlagGet(RANDOMIZER_FLAG_FIXED_MON);
-            #endif
         case RANDOMIZE_STARTERS:
-            #ifdef FORCE_RANDOMIZE_STARTERS
+            if (FORCE_RANDOMIZE_STARTERS)
                 return FORCE_RANDOMIZE_STARTERS;
-            #else
+            else
                 return FlagGet(RANDOMIZER_FLAG_STARTERS);
-            #endif
         default:
             return FALSE;
     }
@@ -52,29 +47,35 @@ bool32 RandomizerFeatureEnabled(enum RandomizerFeature feature)
 
 u32 GetRandomizerSeed(void)
 {
-    #if RANDOMIZER_SEED_IS_TRAINER_ID == TRUE
+    if (RANDOMIZER_SEED_IS_TRAINER_ID)
+    {
         return GetTrainerId(gSaveBlock2Ptr->playerTrainerId);
-    #else
+    }
+    else
+    {
         u32 result;
         result = ((u32)VarGet(RANDOMIZER_VAR_SEED_H) << 16) | VarGet(RANDOMIZER_VAR_SEED_L);
         return result;
-    #endif
+    }
 }
 
 // Sets the seed that will be used for the randomizer if doing so is possible.
 bool32 SetRandomizerSeed(u32 newSeed)
 {
-    #if RANDOMIZER_SEED_IS_TRAINER_ID == TRUE
+    if (RANDOMIZER_SEED_IS_TRAINER_ID)
+    {
         // It isn't possible to set the randomizer seed in this case.
         return FALSE;
-    #else
+    }
+    else
+    {
         VarSet(RANDOMIZER_VAR_SEED_L, (u16)newSeed);
         VarSet(RANDOMIZER_VAR_SEED_H, (u16)(newSeed >> 16));
         return TRUE;
-    #endif
+    }
 }
 
-static bool32 IsSpeciesPermitted(u16 species)
+static bool32 IsSpeciesPermitted(u32 species)
 {
     // SPECIES_NONE is never valid.
     if (species == SPECIES_NONE)
@@ -90,20 +91,13 @@ static bool32 IsSpeciesPermitted(u16 species)
 
 u32 GenerateSeedForRandomizer(void)
 {
-    u32 data;
-    const u32 vblankCounter = gMain.vblankCounter1;
-    #if HQ_RANDOM == TRUE
-        data = Random32();
-    #else
-        data = gRngValue;
-        Random();
-    #endif
-    return data ^ vblankCounter;
+    return Random32() ^ gMain.vblankCounter1;
 }
 
-u16 GetRandomizerOption(enum RandomizerOption option)
+u32 GetRandomizerOption(enum RandomizerOption option)
 {
-    switch(option) {
+    switch(option)
+    {
         case RANDOMIZER_OPTION_SPECIES_MODE:
             return VarGet(RANDOMIZER_VAR_SPECIES_MODE);
         default: // Unknown option.
@@ -139,7 +133,6 @@ struct Sfc32State RandomizerRandSeed(enum RandomizerReason reason, u32 data1, u3
     return state;
 }
 
-
 // This uses a slightly accelerated bitmasking method.
 u32 RandomizerNextRange(struct Sfc32State* state, u32 range)
 {
@@ -168,14 +161,14 @@ u32 RandomizerNextRange(struct Sfc32State* state, u32 range)
 }
 
 // Functions for producing single seeded random numbers.
-u16 RandomizerRand(enum RandomizerReason reason, u32 data1, u32 data2)
+u32 RandomizerRand(enum RandomizerReason reason, u32 data1, u32 data2)
 {
     struct Sfc32State state;
     state = RandomizerRandSeed(reason, data1, data2);
     return RandomizerNext(&state);
 }
 
-u16 RandomizerRandRange(enum RandomizerReason reason, u32 data1, u32 data2, u16 range)
+u16 RandomizerRandRange(enum RandomizerReason reason, u32 data1, u32 data2, u32 range)
 {
     struct Sfc32State state;
     state = RandomizerRandSeed(reason, data1, data2);
@@ -208,10 +201,10 @@ static inline bool32 ShouldRandomizeItem(u16 itemId)
 #include "data/randomizer/item_whitelist.h"
 
 // Given a found item and its location in the game, returns a replacement for that item.
-u16 RandomizeFoundItem(u16 itemId, u8 mapNum, u8 mapGroup, u8 localId)
+u32 RandomizeFoundItem(u32 itemId, u32 mapNum, u32 mapGroup, u32 localId)
 {
     struct Sfc32State state;
-    u16 result;
+    u32 result;
     u32 mapSeed;
 
     if (!ShouldRandomizeItem(itemId))
@@ -231,7 +224,8 @@ u16 RandomizeFoundItem(u16 itemId, u8 mapNum, u8 mapGroup, u8 localId)
         return RandomizerNextRange(&state, RANDOMIZER_MAX_TM - ITEM_TM01 + 1) + ITEM_TM01;
 
     // Randomize everything else to everything else.
-    do {
+    do
+    {
         result = sRandomizerItemWhitelist[RandomizerNextRange(&state, ITEM_WHITELIST_SIZE)];
     } while(!ShouldRandomizeItem(result) || IsItemTMHM(result));
 
@@ -267,7 +261,7 @@ void FindHiddenItemRandomize_NativeCall(struct ScriptContext *ctx)
 }
 
 // Both legendary and mythical Pokémon are included in this category.
-static inline bool32 IsRandomizerLegendary(u16 species)
+static inline bool32 IsRandomizerLegendary(u32 species)
 {
     return gSpeciesInfo[species].isLegendary
         || gSpeciesInfo[species].isMythical
@@ -285,7 +279,7 @@ struct SpeciesTable
 
 #define GROUP_INVALID   0xFFFF
 
-static inline u16 GetSpeciesGroup(const struct SpeciesTable* table, u16 species)
+static inline u32 GetSpeciesGroup(const struct SpeciesTable* table, u32 species)
 {
     u16 groupEntry;
     groupEntry = table->groupData[table->speciesToGroupIndex[species]];
@@ -299,7 +293,7 @@ static inline u16 GetSpeciesGroup(const struct SpeciesTable* table, u16 species)
 
 }
 
-static void GetGroupRange(u16 group, enum RandomizerSpeciesMode mode, u16 *resultMin, u16 *resultMax)
+static void GetGroupRange(u32 group, enum RandomizerSpeciesMode mode, u16 *resultMin, u16 *resultMax)
 {
     // This should never be called on a GROUP_INVALID mon, but if it happens,
     // GROUP_INVALID should be the only valid group.
@@ -328,7 +322,7 @@ static void GetGroupRange(u16 group, enum RandomizerSpeciesMode mode, u16 *resul
 }
 
 //
-static void GetIndicesFromGroupRange(const struct SpeciesTable *table, u16 minGroup, u16 maxGroup, u16 *start, u16 *end)
+static void GetIndicesFromGroupRange(const struct SpeciesTable *table, u32 minGroup, u32 maxGroup, u16 *start, u16 *end)
 {
     u16 index, leftBound, rightBound, maxRightBound;
     maxRightBound = RANDOMIZER_SPECIES_COUNT-1;
@@ -380,7 +374,7 @@ EWRAM_DATA static struct RamSpeciesTable sRamSpeciesTable = {0};
 
 static void FillSpeciesGroupsRandom(struct SpeciesTable* entries)
 {
-    u16 i;
+    u32 i;
     for (i = 0; i < RANDOMIZER_SPECIES_COUNT; i++)
     {
         entries->groupIndexToSpecies[i] = i;
@@ -393,11 +387,11 @@ static void FillSpeciesGroupsRandom(struct SpeciesTable* entries)
 
 static void FillSpeciesGroupsBST(struct SpeciesTable* entries)
 {
-    u16 i;
+    u32 i;
     for(i = 0; i < RANDOMIZER_SPECIES_COUNT; i++)
     {
         const struct SpeciesInfo *curSpeciesInfo;
-        u16 group;
+        u32 group;
 
         entries->groupIndexToSpecies[i] = i;
 
@@ -422,7 +416,7 @@ static void FillSpeciesGroupsBST(struct SpeciesTable* entries)
 
 static void FillSpeciesGroupsLegendary(struct SpeciesTable* entries)
 {
-    u16 i;
+    u32 i;
     for(i = 0; i <= RANDOMIZER_SPECIES_COUNT; i++)
     {
         entries->groupIndexToSpecies[i] = i;
@@ -456,7 +450,7 @@ static const u16 sPreevolutionBabyMons[] =
     SPECIES_MANTYKE,
 };
 
-static void MarkEvolutions(struct SpeciesTable *entries, u16 species, u16 stage)
+static void MarkEvolutions(struct SpeciesTable *entries, u32 species, u32 stage)
 {
     const struct Evolution *evos;
     if (stage == RANDOMIZER_MAX_EVO_STAGES)
@@ -478,7 +472,7 @@ static void MarkEvolutions(struct SpeciesTable *entries, u16 species, u16 stage)
 
 static void FillSpeciesGroupsEvolution(struct SpeciesTable* entries)
 {
-    u16 i;
+    u32 i;
     static const u8 EVO_GROUP_LEGENDARY = 0x81;
     static const u8 EVO_GROUP_NO_EVO = RANDOMIZER_MAX_EVO_STAGES+1;
 
@@ -515,14 +509,14 @@ static void FillSpeciesGroupsEvolution(struct SpeciesTable* entries)
     }
 }
 
-static inline u16 LeftChildIndex(u16 index)
+static inline u32 LeftChildIndex(u32 index)
 {
     return 2*index + 1;
 }
 
-static inline void SwapSpeciesAndGroup(struct SpeciesTable* table, u16 indexA, u16 indexB)
+static inline void SwapSpeciesAndGroup(struct SpeciesTable* table, u32 indexA, u32 indexB)
 {
-    u16 temp;
+    u32 temp;
     SWAP(table->groupData[indexA], table->groupData[indexB], temp);
     SWAP(table->groupIndexToSpecies[indexA], table->groupIndexToSpecies[indexB], temp);
 }
@@ -610,9 +604,9 @@ void PreloadRandomizationTables(void)
     GetSpeciesTable(GetRandomizerOption(RANDOMIZER_OPTION_SPECIES_MODE));
 }
 
-#endif
+#endif // RANDOMIZER_DYNAMIC_SPECIES
 
-static u16 RandomizeMonTableLookup(struct Sfc32State* state, enum RandomizerSpeciesMode mode, u16 species)
+static u32 RandomizeMonTableLookup(struct Sfc32State* state, enum RandomizerSpeciesMode mode, u32 species)
 {
     u16 minGroup, maxGroup, originalGroup, resultIndex;
     u16 minIndex, maxIndex;
@@ -630,20 +624,19 @@ static u16 RandomizeMonTableLookup(struct Sfc32State* state, enum RandomizerSpec
     return table->groupIndexToSpecies[resultIndex];
 }
 
-static u16 RandomizeMonFromSeed(struct Sfc32State *state, enum RandomizerSpeciesMode mode, u16 species)
+static u32 RandomizeMonFromSeed(struct Sfc32State *state, enum RandomizerSpeciesMode mode, u32 species)
 {
     if (!IsSpeciesPermitted(species))
         return species;
 
-    if (mode >= MAX_MON_MODE)
+    if (mode >= MON_MODE_MAX_COUNT)
         mode = MON_RANDOM;
 
     return RandomizeMonTableLookup(state, mode, species);
-
 }
 
 // Fills an array with count Pokémon, with no repeats.
-void GetUniqueMonList(enum RandomizerReason reason, enum RandomizerSpeciesMode mode, u32 seed1, u16 seed2, u8 count, const u16 *originalSpecies, u16 *resultSpecies)
+void GetUniqueMonList(enum RandomizerReason reason, enum RandomizerSpeciesMode mode, u32 seed1, u32 seed2, u32 count, const u16 *originalSpecies, u16 *resultSpecies)
 {
     u32 i, curMon;
     u32 seenMonBitVector[(RANDOMIZER_SPECIES_COUNT-1)/32+1] = {};
@@ -691,14 +684,14 @@ void GetUniqueMonList(enum RandomizerReason reason, enum RandomizerSpeciesMode m
     }
 }
 
-u16 RandomizeMonBaseForm(enum RandomizerReason reason, enum RandomizerSpeciesMode mode, u32 seed, u16 species)
+u32 RandomizeMonBaseForm(enum RandomizerReason reason, enum RandomizerSpeciesMode mode, u32 seed, u32 species)
 {
     struct Sfc32State state;
     state = RandomizerRandSeed(reason, seed, species);
     return RandomizeMonFromSeed(&state, mode, species);
 }
 
-static u16 ChooseRandomForm(struct Sfc32State *state, const u16 baseSpecies)
+static u32 ChooseRandomForm(struct Sfc32State *state, const u32 baseSpecies)
 {
     const u16 *formsTable = gSpeciesInfo[baseSpecies].formSpeciesIdTable;
     if (formsTable)
@@ -714,7 +707,7 @@ static u16 ChooseRandomForm(struct Sfc32State *state, const u16 baseSpecies)
     return baseSpecies;
 }
 
-static u16 GetFormFromRareFormInfo(struct Sfc32State *state, const struct RandomizerRareFormInfo *info)
+static u32 GetFormFromRareFormInfo(struct Sfc32State *state, const struct RandomizerRareFormInfo *info)
 {
     if (RandomizerNextRange(state, info->inverseRareFormChance) > 0)
         return info->commonForm;
@@ -724,7 +717,7 @@ static u16 GetFormFromRareFormInfo(struct Sfc32State *state, const struct Random
 
 #define RANDOM_FROM_ARRAY(arr)  (arr[RandomizerNextRange(state, ARRAY_COUNT(arr))])
 #define RARE_FORM(infoStruct)   (GetFormFromRareFormInfo(state, &infoStruct))
-static u16 ChooseFormSpecial(struct Sfc32State *state, const u16 baseSpecies)
+static u32 ChooseFormSpecial(struct Sfc32State *state, const u16 baseSpecies)
 {
     switch (baseSpecies) {
         // These species do almost ordinary ordinary random form selection processes.
@@ -759,7 +752,7 @@ static u16 ChooseFormSpecial(struct Sfc32State *state, const u16 baseSpecies)
 #undef RANDOM_FROM_ARRAY
 #undef RARE_FORM
 
-u16 RandomizeMon(enum RandomizerReason reason, enum RandomizerSpeciesMode mode, u32 seed, u16 species)
+u32 RandomizeMon(enum RandomizerReason reason, enum RandomizerSpeciesMode mode, u32 seed, u32 species)
 {
     u32 speciesMode;
     u16 resultSpecies;
@@ -785,7 +778,7 @@ u16 RandomizeMon(enum RandomizerReason reason, enum RandomizerSpeciesMode mode, 
     }
 }
 
-u16 RandomizeWildEncounter(u16 species, u8 mapNum, u8 mapGroup, enum WildArea area, u8 slot)
+u32 RandomizeWildEncounter(u32 species, u32 mapNum, u32 mapGroup, enum WildArea area, u32 slot)
 {
     if (RandomizerFeatureEnabled(RANDOMIZE_WILD_MON))
     {
@@ -805,7 +798,7 @@ u16 RandomizeWildEncounter(u16 species, u8 mapNum, u8 mapGroup, enum WildArea ar
 
 
 // This is used in the Pokédex area map code.
-bool32 IsRandomizationPossible(u16 originalSpecies, u16 targetSpecies)
+bool32 IsRandomizationPossible(u32 originalSpecies, u32 targetSpecies)
 {
     const enum RandomizerSpeciesMode mode = GetRandomizerOption(RANDOMIZER_OPTION_SPECIES_MODE);
     if (!IsSpeciesPermitted(targetSpecies) || !IsSpeciesPermitted(originalSpecies))
@@ -815,7 +808,7 @@ bool32 IsRandomizationPossible(u16 originalSpecies, u16 targetSpecies)
         return originalSpecies == targetSpecies;
     }
 
-    if (mode != MON_RANDOM && mode < MAX_MON_MODE)
+    if (mode != MON_RANDOM && mode < MON_MODE_MAX_COUNT)
     {
         u16 minGroupOriginal, maxGroupOriginal, minGroupTarget, maxGroupTarget,
             originalGroup, targetGroup;
@@ -833,7 +826,7 @@ bool32 IsRandomizationPossible(u16 originalSpecies, u16 targetSpecies)
     return TRUE;
 }
 
-u16 RandomizeTrainerMon(u16 trainerId, u8 slot, u8 totalMons, u16 species)
+u32 RandomizeTrainerMon(u32 trainerId, u32 slot, u32 totalMons, u32 species)
 {
     if (RandomizerFeatureEnabled(RANDOMIZE_TRAINER_MON))
     {
@@ -850,7 +843,7 @@ u16 RandomizeTrainerMon(u16 trainerId, u8 slot, u8 totalMons, u16 species)
     return species;
 }
 
-u16 RandomizeFixedEncounterMon(u16 species, u8 mapNum, u8 mapGroup, u8 localId)
+u32 RandomizeFixedEncounterMon(u32 species, u32 mapNum, u32 mapGroup, u32 localId)
 {
     if (RandomizerFeatureEnabled(RANDOMIZE_FIXED_MON))
     {
@@ -869,7 +862,7 @@ u16 RandomizeFixedEncounterMon(u16 species, u8 mapNum, u8 mapGroup, u8 localId)
 EWRAM_DATA static u32 sLastStarterRandomizerSeed = 0;
 EWRAM_DATA static u16 sRandomizedStarters[3] = {0};
 
-u16 RandomizeStarter(u16 starterSlot, const u16* originalStarters)
+u32 RandomizeStarter(u32 starterSlot, const u16* originalStarters)
 {
     if (RandomizerFeatureEnabled(RANDOMIZE_STARTERS))
     {
