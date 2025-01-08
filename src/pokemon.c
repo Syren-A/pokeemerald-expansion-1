@@ -2068,8 +2068,9 @@ void DeleteFirstMoveAndGiveMoveToBoxMon(struct BoxPokemon *boxMon, u16 move)
 
 u8 CountAliveMonsInBattle(u8 caseId, u32 battler)
 {
-    s32 i;
-    u8 retVal = 0;
+    u32 i;
+    u32 retVal = 0;
+    u32 sideBattler = GetBattlerSide(battler);
 
     switch (caseId)
     {
@@ -2083,14 +2084,14 @@ u8 CountAliveMonsInBattle(u8 caseId, u32 battler)
     case BATTLE_ALIVE_EXCEPT_BATTLER_SIDE:
         for (i = 0; i < MAX_BATTLERS_COUNT; i++)
         {
-            if (i != battler && i != BATTLE_PARTNER(battler) && !(gAbsentBattlerFlags & (1u << i)))
+            if (i != battler && GetBattlerSide(i) != sideBattler && !(gAbsentBattlerFlags & (1u << i)))
                 retVal++;
         }
         break;
     case BATTLE_ALIVE_SIDE:
         for (i = 0; i < MAX_BATTLERS_COUNT; i++)
         {
-            if (GetBattlerSide(i) == GetBattlerSide(battler) && !(gAbsentBattlerFlags & (1u << i)))
+            if (GetBattlerSide(i) == sideBattler && !(gAbsentBattlerFlags & (1u << i)))
                 retVal++;
         }
         break;

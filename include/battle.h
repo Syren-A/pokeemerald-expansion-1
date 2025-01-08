@@ -1225,6 +1225,11 @@ static inline struct Pokemon *GetSideParty(u32 side)
     return (side == B_SIDE_PLAYER) ? gPlayerParty : gEnemyParty;
 }
 
+static inline bool32 IsAlly(u32 battlerAtk, u32 battlerDef)
+{
+    return GetBattlerSide(battlerAtk) == GetBattlerSide(battlerDef);
+}
+
 static inline struct Pokemon *GetBattlerParty(u32 battler)
 {
     return GetSideParty(GetBattlerSide(battler));
